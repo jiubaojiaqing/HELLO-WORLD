@@ -17,15 +17,17 @@ jobs:
             -target ChanTrading \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath build \
             build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
-            ARCHS=arm64
+            ARCHS=arm64 \
+            CONFIGURATION_BUILD_DIR=build 2>&1 | tail -30
 
       - name: Package unsigned IPA
         run: |
-          APP=$(find build -type d -name "ChanTrading.app" | head -1)
+          echo "--- workspace scan ---"
+          find . -type d -name "*.app" -not -path "./build/*" || true
+          APP=$(find . -type d -name "ChanTrading.app" -not -path "./build/*" | head -1)
           echo "APP path: $APP"
           test -n "$APP"
           mkdir Payload
@@ -38,3 +40,10 @@ jobs:
         with:
           name: ChanTrading-ipa
           path: ChanTrading.ipa
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
