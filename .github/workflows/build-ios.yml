@@ -1,0 +1,37 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build unsigned .app (无需签名证书)
+        run: |
+          xcodebuild -project ios/ChanTrading.xcodeproj \
+            -target ChanTrading \
+            -configuration Release \
+            -sdk iphoneos \
+            build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ARCHS=arm64 \
+            CONFIGURATION_BUILD_DIR=build
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir Payload
+          cp -r build/ChanTrading.app Payload/
+          zip -qry ChanTrading.ipa Payload
+          ls -la ChanTrading.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChanTrading-ipa
+          path: ChanTrading.ipa

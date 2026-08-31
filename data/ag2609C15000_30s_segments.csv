@@ -1,0 +1,3 @@
+from_idx,from_price,to_idx,to_price,label
+22,903.0,34,996.0,D@k22->XSG (黄色虚线，向上线段)
+34,996.0,96,704.5,XSG->D@k96 (黄色实线，向下线段)

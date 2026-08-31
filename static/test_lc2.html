@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Lightweight Charts 测试</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#eee; font-family:sans-serif; padding:16px; }
+#chartWrapper { position:relative; width:100%; height:500px; }
+#chart { width:100%; height:500px; }
+#chart2 { width:100%; height:150px; margin-top:4px; }
+.controls { margin:12px 0; display:flex; gap:8px; }
+select, button { background:#333; color:#eee; border:1px solid #444; border-radius:6px; padding:6px 12px; }
+.info { font-size:12px; color:#888; margin:6px 0; }
+</style>
+</head>
+<body>
+<h2>Lightweight Charts 测试</h2>
+<div class="controls">
+  <select id="selCode"><option value="603986">603986</option><option value="002475">002475</option></select>
+  <select id="selPeriod"><option value="day">日线</option><option value="30min">30分钟</option></select>
+  <button id="btnLoad">加载</button>
+  <span id="info" class="info"></span>
+</div>
+<div id="chartWrapper"><div id="chart"></div><div id="chart2"></div></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+function toTime(dt, period){
+  if(period === 'day' || period === 'week') return dt.slice(0,10);
+  return Math.floor(new Date(dt.replace(' ','T')).getTime() / 1000);
+}
+
+async function load(code, period){
+  document.getElementById('chart').innerHTML = '';
+  document.getElementById('chart2').innerHTML = '';
+  const r = await fetch('/api/data/'+code+(period?'?period='+period:'')).then(x=>x.json());
+  const bars = r.bars || [];
+  document.getElementById('info').textContent = `bars:${bars.length} pens:${(r.pens||[]).length} segs:${(r.segments||[]).length} zs:${(r.zhongshu||[]).length}`;
+
+  // 主 chart: K线
+  const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+    height: 380, layout: { background:{color:'#1a1a2e'}, textColor:'#888' },
+    grid: { vertLines:{color:'#2a2a4a'}, horzLines:{color:'#2a2a4a'} },
+    timeScale: { borderColor:'#333', timeVisible: period!=='day', secondsVisible:false },
+    rightPriceScale: { borderColor:'#333' },
+  });
+  const candleSeries = chart.addCandlestickSeries({
+    upColor:'#ff6b6b', downColor:'#2ecc71', borderUpColor:'#ff6b6b', borderDownColor:'#2ecc71',
+    wickUpColor:'#ff6b6b', wickDownColor:'#2ecc71',
+  });
+  const klineData = bars.map(b => ({ time: toTime(b.datetime, period), open: b.open, high: b.high, low: b.low, close: b.close }));
+  candleSeries.setData(klineData);
+
+  // 笔
+  (r.pens||[]).forEach(p => {
+    const s = bars.find(b=>b.idx===p.start_idx), e = bars.find(b=>b.idx===p.end_idx);
+    if(!s||!e) return;
+    const ls = chart.addLineSeries({ color:p.direction==='up'?'#3498db':'#f39c12', lineWidth:1.2, lastValueVisible:false, priceLineVisible:false });
+    ls.setData([{time:toTime(s.datetime,period),value:p.start_price},{time:toTime(e.datetime,period),value:p.end_price}]);
+  });
+  // 线段
+  (r.segments||[]).forEach(sg => {
+    const f = bars.find(b=>b.idx===sg.from_idx), t = bars.find(b=>b.idx===sg.to_idx);
+    if(!f||!t) return;
+    const ls = chart.addLineSeries({ color:'#3498db', lineWidth:2.5, lastValueVisible:false, priceLineVisible:false });
+    ls.setData([{time:toTime(f.datetime,period),value:sg.from_price},{time:toTime(t.datetime,period),value:sg.to_price}]);
+  });
+  // 中枢
+  (r.zhongshu||[]).forEach(zs => {
+    const l = bars.find(b=>b.idx===zs.x_left), r2 = bars.find(b=>b.idx===zs.x_right);
+    if(!l||!r2) return;
+    const tL=toTime(l.datetime,period), tR=toTime(r2.datetime,period);
+    const top = chart.addLineSeries({ color:'rgba(155,89,182,0.6)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+    top.setData([{time:tL,value:zs.y_top},{time:tR,value:zs.y_top}]);
+    const bot = chart.addLineSeries({ color:'rgba(155,89,182,0.6)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+    bot.setData([{time:tL,value:zs.y_bottom},{time:tR,value:zs.y_bottom}]);
+    const lt = chart.addLineSeries({ color:'rgba(155,89,182,0.6)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+    lt.setData([{time:tL,value:zs.y_bottom},{time:tL,value:zs.y_top}]);
+    const rt = chart.addLineSeries({ color:'rgba(155,89,182,0.6)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+    rt.setData([{time:tR,value:zs.y_bottom},{time:tR,value:zs.y_top}]);
+    const area = chart.addAreaSeries({ lineColor:'transparent', topColor:'rgba(155,89,182,0.12)', bottomColor:'rgba(155,89,182,0.12)', lastValueVisible:false, priceLineVisible:false });
+    area.setData([{time:tL,value:zs.y_top},{time:tR,value:zs.y_top},{time:tR,value:zs.y_bottom},{time:tL,value:zs.y_bottom},{time:tL,value:zs.y_top}]);
+  });
+
+  // 信号标记
+  const markers = [];
+  bars.forEach(b => {
+    if(!b.signals) return;
+    b.signals.forEach(s => {
+      const color = {'is_top':'#ff6b6b','is_bottom':'#2ecc71','is_XSG':'#ffd93d','is_XXD':'#a29bfe','is_SZZSPZBC':'#ff9f43','is_XDZSPZBC':'#00cec9','is_SZQSBC':'#ff9f43','is_XDQSBC':'#00cec9','is_SZBBC':'#ff6b81','is_XDBBC':'#7bed9f','is_SZ5BBC':'#ffa502','is_XD5BBC':'#2ed573','is_SZ7BBC':'#eccc68','is_XD7BBC':'#7bed9f'}[s.type]||'#fff';
+      const pos = s.type==='is_bottom'||s.type==='is_XXD' ? 'belowBar' : 'aboveBar';
+      const text = {'is_top':'▲','is_bottom':'▼','is_XSG':'↑','is_XXD':'↓','is_SZZSPZBC':'B↑','is_XDZSPZBC':'B↓','is_SZQSBC':'Q↑','is_XDQSBC':'Q↓','is_SZBBC':'BC↑','is_XDBBC':'BC↓','is_SZ5BBC':'5↑','is_XD5BBC':'5↓','is_SZ7BBC':'7↑','is_XD7BBC':'7↓'}[s.type]||'';
+      markers.push({ time: toTime(b.datetime, period), position: pos, color, text, shape: 'circle' });
+    });
+  });
+  candleSeries.setMarkers(markers);
+  chart.timeScale().fitContent();
+
+  // MACD 副图
+  const closes = bars.map(b=>b.close);
+  const macd = calcMACD(closes);
+  const chart2 = LightweightCharts.createChart(document.getElementById('chart2'), {
+    height: 130, layout: { background:{color:'#1a1a2e'}, textColor:'#888' },
+    grid: { vertLines:{color:'#2a2a4a'}, horzLines:{color:'#2a2a4a'} },
+    timeScale: { borderColor:'#333', visible:false },
+    rightPriceScale: { borderColor:'#333' },
+  });
+  // 同步时间轴
+  chart.timeScale().subscribeVisibleTimeRangeChange(()=>{
+    const rng = chart.timeScale().getVisibleRange();
+    if(rng) chart2.timeScale().setVisibleRange(rng);
+  });
+  chart2.timeScale().subscribeVisibleTimeRangeChange(()=>{
+    const rng = chart2.timeScale().getVisibleRange();
+    if(rng) chart.timeScale().setVisibleRange(rng);
+  });
+
+  const macdData = bars.map((b,i) => ({ time: toTime(b.datetime, period), value: macd.hist[i] }));
+  const difData = bars.map((b,i) => ({ time: toTime(b.datetime, period), value: macd.dif[i] }));
+  const deaData = bars.map((b,i) => ({ time: toTime(b.datetime, period), value: macd.dea[i] }));
+  chart2.addHistogramSeries({ color: '#888', priceFormat: { type: 'volume' }, priceScaleId: 'macd' }).setData(macdData.map(d=>({...d,color:d.value>=0?'#ff6b6b':'#2ecc71'})));
+  const difSeries = chart2.addLineSeries({ color:'#3498db', lineWidth:1.2, priceScaleId: 'macd' });
+  difSeries.setData(difData);
+  const deaSeries = chart2.addLineSeries({ color:'#f39c12', lineWidth:1.2, priceScaleId: 'macd' });
+  deaSeries.setData(deaData);
+  chart2.timeScale().fitContent();
+}
+
+function calcMACD(closes, fast=12, slow=26, sig=9){
+  const dif=[], dea=[], hist=[];
+  let ema12=closes[0], ema26=closes[0], emaSig=0;
+  for(let i=0;i<closes.length;i++){
+    ema12 = i===0 ? closes[i] : ema12 + 2/(fast+1)*(closes[i]-ema12);
+    ema26 = i===0 ? closes[i] : ema26 + 2/(slow+1)*(closes[i]-ema26);
+    dif[i] = ema12 - ema26;
+    emaSig = i===0 ? dif[i] : emaSig + 2/(sig+1)*(dif[i]-emaSig);
+    dea[i] = emaSig;
+    hist[i] = (dif[i] - emaSig) * 2;
+  }
+  return {dif, dea, hist};
+}
+
+document.getElementById('btnLoad').onclick = ()=> load(document.getElementById('selCode').value, document.getElementById('selPeriod').value);
+window.onload = ()=> load('603986', 'day');
+</script>
+</body>
+</html>

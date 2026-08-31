@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8">
+<style>body{margin:0}iframe{width:1400px;height:900px;border:0}</style>
+</head>
+<body>
+<script>
+// 直接加载LC+一个最小页面模拟，但无法模拟8769的chart。改用 iframe 注入
+// 用 iframe 加载 localhost:8769/，然后跨域注入失败。改用直接脚本注入页面:
+// 直接请求index.html，替换其中的</body>前加一段JS：延迟2s调用toggleTheme()，再延迟1s截图
+fetch('/').then(r=>r.text()).then(html=>{
+  document.body.innerHTML = html;
+  // 页面加载完再注入theme切换
+  setTimeout(()=>{
+    try{
+      window._theme = 'dark';
+      window.toggleTheme && window.toggleTheme();
+      setTimeout(()=>{
+        // 输出一个标记
+        document.title='THEME_LIGHT';
+      }, 800);
+    }catch(e){document.title='ERR:'+e.message;}
+  }, 4000);
+});
+</script>
+</body>
+</html>

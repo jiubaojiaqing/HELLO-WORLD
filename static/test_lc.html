@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Lightweight Charts 测试</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#eee; font-family:sans-serif; padding:16px; }
+#chartWrapper { position:relative; width:100%; height:500px; }
+#chart { width:100%; height:500px; }
+#canvasOverlay { position:absolute; top:0; left:0; pointer-events:none; z-index:10; }
+.controls { margin:12px 0; display:flex; gap:8px; }
+select, button { background:#333; color:#eee; border:1px solid #444; border-radius:6px; padding:6px 12px; }
+</style>
+</head>
+<body>
+<h2>Lightweight Charts 测试</h2>
+<div class="controls">
+  <select id="selCode"><option value="603986">603986</option><option value="002475">002475</option></select>
+  <select id="selPeriod"><option value="day">日线</option><option value="30min">30分钟</option></select>
+  <button id="btnLoad">加载</button>
+</div>
+<div id="chartWrapper"><div id="chart"></div></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+async function load(code, period){
+  const w = document.getElementById('chartWrapper');
+  const d = document.getElementById('chart');
+  d.innerHTML = '';
+  // 清旧覆盖层
+  const oldOv = document.getElementById('overlay');
+  if(oldOv) oldOv.remove();
+
+  // 拉数据
+  const url = '/api/data/'+code+(period?'?period='+period:'');
+  const r = await fetch(url).then(x=>x.json());
+  const bars = r.bars || [];
+
+  // 创建 chart
+  const chart = LightweightCharts.createChart(d, {
+    width: w.clientWidth, height: 500,
+    layout: { background: { color: '#1a1a2e' }, textColor: '#888' },
+    grid: { vertLines: { color: '#2a2a4a' }, horzLines: { color: '#2a2a4a' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#333' },
+    timeScale: { borderColor: '#333', timeVisible: false, secondsVisible: false },
+  });
+
+  // K线 series
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: '#ff6b6b', downColor: '#2ecc71', borderUpColor: '#ff6b6b', borderDownColor: '#2ecc71',
+    wickUpColor: '#ff6b6b', wickDownColor: '#2ecc71',
+  });
+
+  // 转换数据: Lightweight Charts 需要 time 格式为 YYYY-MM-DD 或 Unix timestamp
+  const klineData = bars.map(b => ({
+    time: b.datetime.slice(0,10),
+    open: b.open, high: b.high, low: b.low, close: b.close,
+  }));
+  candleSeries.setData(klineData);
+
+  // 笔: 用 LineSeries 画
+  const pens = r.pens || [];
+  pens.forEach(p => {
+    const startBar = bars.find(b => b.idx === p.start_idx);
+    const endBar = bars.find(b => b.idx === p.end_idx);
+    if(!startBar || !endBar) return;
+    const lineSeries = chart.addLineSeries({
+      color: p.direction === 'up' ? '#3498db' : '#f39c12',
+      lineWidth: 1.2, lastValueVisible: false, priceLineVisible: false,
+    });
+    lineSeries.setData([
+      { time: startBar.datetime.slice(0,10), value: p.start_price },
+      { time: endBar.datetime.slice(0,10), value: p.end_price },
+    ]);
+  });
+
+  // 线段
+  const segs = r.segments || [];
+  segs.forEach(sg => {
+    const fromBar = bars.find(b => b.idx === sg.from_idx);
+    const toBar = bars.find(b => b.idx === sg.to_idx);
+    if(!fromBar || !toBar) return;
+    const lineSeries = chart.addLineSeries({
+      color: '#3498db', lineWidth: 2.5, lastValueVisible: false, priceLineVisible: false,
+    });
+    lineSeries.setData([
+      { time: fromBar.datetime.slice(0,10), value: sg.from_price },
+      { time: toBar.datetime.slice(0,10), value: sg.to_price },
+    ]);
+  });
+
+  // 中枢: 用 LineSeries 画 4 条边框线
+  (r.zhongshu || []).forEach(zs => {
+    const leftBar = bars.find(b => b.idx === zs.x_left);
+    const rightBar = bars.find(b => b.idx === zs.x_right);
+    if(!leftBar || !rightBar) return;
+    const tL = leftBar.datetime.slice(0,10), tR = rightBar.datetime.slice(0,10);
+    // 顶部线
+    const topLine = chart.addLineSeries({
+      color: 'rgba(155,89,182,0.6)', lineWidth: 1, lastValueVisible: false, priceLineVisible: false,
+    });
+    topLine.setData([{time:tL,value:zs.y_top},{time:tR,value:zs.y_top}]);
+    // 底部线
+    const botLine = chart.addLineSeries({
+      color: 'rgba(155,89,182,0.6)', lineWidth: 1, lastValueVisible: false, priceLineVisible: false,
+    });
+    botLine.setData([{time:tL,value:zs.y_bottom},{time:tR,value:zs.y_bottom}]);
+    // 左竖线
+    const leftLine = chart.addLineSeries({
+      color: 'rgba(155,89,182,0.6)', lineWidth: 1, lastValueVisible: false, priceLineVisible: false,
+    });
+    leftLine.setData([{time:tL,value:zs.y_bottom},{time:tL,value:zs.y_top}]);
+    // 右竖线
+    const rightLine = chart.addLineSeries({
+      color: 'rgba(155,89,182,0.6)', lineWidth: 1, lastValueVisible: false, priceLineVisible: false,
+    });
+    rightLine.setData([{time:tR,value:zs.y_bottom},{time:tR,value:zs.y_top}]);
+    // 填充区域 (半透明)
+    const areaSeries = chart.addAreaSeries({
+      lineColor: 'transparent', topColor: 'rgba(155,89,182,0.12)', bottomColor: 'rgba(155,89,182,0.12)',
+      lastValueVisible: false, priceLineVisible: false,
+    });
+    areaSeries.setData([{time:tL,value:zs.y_top},{time:tR,value:zs.y_top},{time:tR,value:zs.y_bottom},{time:tL,value:zs.y_bottom},{time:tL,value:zs.y_top}]);
+  });
+
+  // 信号标记
+  const markers = [];
+  bars.forEach(b => {
+    if(!b.signals) return;
+    b.signals.forEach(s => {
+      const color = {'is_top':'#ff6b6b','is_bottom':'#2ecc71','is_XSG':'#ffd93d','is_XXD':'#a29bfe','is_SZZSPZBC':'#ff9f43','is_XDZSPZBC':'#00cec9','is_SZQSBC':'#ff9f43','is_XDQSBC':'#00cec9','is_SZBBC':'#ff6b81','is_XDBBC':'#7bed9f','is_SZ5BBC':'#ffa502','is_XD5BBC':'#2ed573','is_SZ7BBC':'#eccc68','is_XD7BBC':'#7bed9f'}[s.type]||'#fff';
+      const position = s.type==='is_bottom'||s.type==='is_XXD' ? 'belowBar' : 'aboveBar';
+      const text = {'is_top':'▲','is_bottom':'▼','is_XSG':'↑','is_XXD':'↓','is_SZZSPZBC':'B↑','is_XDZSPZBC':'B↓','is_SZQSBC':'Q↑','is_XDQSBC':'Q↓','is_SZBBC':'BC↑','is_XDBBC':'BC↓','is_SZ5BBC':'5↑','is_XD5BBC':'5↓','is_SZ7BBC':'7↑','is_XD7BBC':'7↓'}[s.type]||'';
+      markers.push({ time: b.datetime.slice(0,10), position, color, text, shape: 'circle' });
+    });
+  });
+  candleSeries.setMarkers(markers);
+
+  chart.timeScale().fitContent();
+  console.log('✅ 加载完成, bars:', bars.length, 'pens:', pens.length, 'segments:', segs.length, 'zs:', r.zhongshu?.length);
+}
+
+document.getElementById('btnLoad').onclick = ()=>{
+  load(document.getElementById('selCode').value, document.getElementById('selPeriod').value);
+};
+window.onload = ()=> load('603986', 'day');
+</script>
+</body>
+</html>

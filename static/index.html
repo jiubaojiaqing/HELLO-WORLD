@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>大富翁之生财有道</title>
+<!-- 2026-08-30 PWA: 添加到主屏幕支持 (iOS: apple-touch-icon + standalone; Android/Desktop: manifest) -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="static/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="生财有道">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+:root{
+  --bg:#1a1a2e; --panel-bg:#222244; --text:#eee; --muted:#888; --muted2:#666;
+  --border:#333; --accent:#4ecdc4; --chart-bg:#1a1a2e; --chart-grid:#2a2a4a;
+  --chart-time:#888; --bc-bg:rgba(0,0,0,0.85); --tip-bg:#222244;
+}
+html.light{
+  --bg:#f5f5f5; --panel-bg:#ffffff; --text:#1a1a1a; --muted:#666; --muted2:#888;
+  --border:#ddd; --chart-bg:#ffffff; --chart-grid:#e8e8e8;
+  --chart-time:#666; --bc-bg:rgba(255,255,255,0.95); --tip-bg:#ffffff;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; transition:background .3s,color .3s; }
+/* 2026-08-09 下拉框夜间模式修复：所有 select/option 默认跟随主题 */
+select, option { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:4px 8px; }
+html.light select, html.light option { background:#ffffff; color:#1a1a1a; border:1px solid #ddd; }
+.container { max-width:1200px; margin:0 auto; padding:16px; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); margin-bottom:12px; }
+.logo { font-size:20px; font-weight:bold; color:var(--accent); }
+.status { font-size:13px; color:var(--muted); }
+
+.panel { background:var(--panel-bg); border-radius:10px; padding:14px; margin-bottom:12px; transition:background .3s; }
+.panel-title { font-size:14px; color:var(--accent); margin-bottom:8px; font-weight:bold; }
+
+.setup-row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+.setup-row label { font-size:13px; color:var(--muted); }
+.setup-row select, .setup-row input {
+  background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:13px;
+}
+/* T+1 切换开关 */
+.tplus1-label { display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+.tplus1-label .switch { position:relative; width:42px; height:24px; flex-shrink:0; }
+.tplus1-label .switch input { opacity:0; width:0; height:0; position:absolute; }
+.tplus1-label .slider { position:absolute; inset:0; background:#555; border-radius:12px; transition:0.3s; cursor:pointer; }
+.tplus1-label .slider::before { content:''; position:absolute; left:3px; top:3px; width:18px; height:18px; background:#fff; border-radius:50%; transition:0.3s; }
+.tplus1-label .switch input:checked + .slider { background:#2ecc71; }
+.tplus1-label .switch input:checked + .slider::before { transform:translateX(18px); }
+.tplus1-label .switch-text { font-size:13px; font-weight:bold; color:var(--text); white-space:nowrap; }
+
+.btn {
+  background:#4ecdc4; color:#111; border:none; border-radius:6px; padding:8px 18px; font-size:14px; cursor:pointer; font-weight:bold;
+}
+.btn:hover { filter:brightness(1.15); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-red { background:#ff6b6b; color:#fff; }
+.btn-green { background:#2ecc71; color:#fff; }
+.btn-blue { background:#3498db; color:#fff; }
+.btn-gray { background:#555; color:#eee; }
+
+.period-filter-btn { font-size:12px; padding:4px 10px; margin-right:4px; opacity:0.5; }
+.period-filter-btn.active-period { opacity:1; box-shadow:0 0 0 2px #4ecdc4; color:#111 !important; font-weight:bold; }
+
+/* 图例（L1/L2 图例容器）桌面端基础样式 */
+.legend { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+.legend > span { font-size:8px; padding:1px 4px; border-radius:3px; white-space:nowrap; }
+/* 响应式：小屏适配 */
+@media (max-width: 768px){
+  .container { padding:8px; max-width:100%; }
+  .topbar { flex-wrap:wrap; gap:6px; }
+  .setup-row { flex-direction:column; align-items:stretch; }
+  .setup-row select, .setup-row input, .setup-row button { width:100%; }
+  #chart { min-height:380px; }
+  .asset-bar { flex-direction:column; gap:8px; }
+  .asset-item { min-width:0; }
+  .modal { width:96%; }
+  .legend { flex-wrap:wrap; }
+  .legend > span { font-size:8px; margin:2px 0; }
+  .trade-log { overflow-x:auto; }
+  #boardTable, #boardBody { font-size:12px; }
+}
+@media (max-width: 480px){
+  .logo { font-size:16px; }
+  .status { font-size:12px; }
+  #chart { min-height:320px; }
+  .panel-title { font-size:14px; }
+}
+
+.asset-bar { display:grid; grid-template-columns:repeat(4,auto); gap:6px; margin-bottom:6px; }
+.asset-item { background:var(--panel-bg); border-radius:6px; padding:5px 8px; text-align:center; }
+.asset-item:nth-child(5) { grid-column:1; }
+.asset-item:nth-child(6) { grid-column:2; }
+.asset-item:nth-child(7) { grid-column:3; grid-column-end:5; }
+.asset-item .label { font-size:10px; color:var(--muted); }
+.asset-item .value { font-size:13px; font-weight:bold; margin-top:2px; }
+.profit-up { color:#ff6b6b; }
+.profit-down { color:#2ecc71; }
+
+#chart { min-height:520px; background:var(--chart-bg); border-radius:8px; position:relative; overflow:hidden; }
+.chart-tip { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:13px; color:var(--muted2); }
+
+
+/* 手机端 6.78 寸 (≤430px) 专用排版 */
+
+.trade-row { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; align-items:center; }
+.qty-input { width:110px; }
+
+.progress { height:6px; background:#333; border-radius:3px; margin-top:8px; overflow:hidden; }
+.progress-fill { height:100%; background:#4ecdc4; width:0%; transition:width .3s; }
+
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { padding:6px 8px; text-align:left; border-bottom:1px solid var(--border); }
+th { color:var(--muted); font-weight:normal; }
+
+.result-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:10px; }
+.result-item { background:var(--bg); border-radius:8px; padding:10px; text-align:center; }
+.result-item .label { font-size:12px; color:var(--muted); }
+.result-item .value { font-size:18px; font-weight:bold; margin-top:4px; }
+
+.hidden { display:none !important; }
+.trade-log { max-height:220px; overflow-y:auto; }
+.toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:10px 22px; border-radius:8px; font-size:14px; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+.toast.show { opacity:1; }
+
+.modal-mask { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:998; display:flex; align-items:center; justify-content:center; }
+.modal { background:var(--panel-bg); border-radius:12px; padding:18px; max-width:760px; width:92%; max-height:85vh; overflow-y:auto; }
+
+.hover-tip { position:absolute; background:var(--tip-bg); border:1px solid #4ecdc4; border-radius:8px; padding:8px 12px; font-size:12px; color:#eee; z-index:997; pointer-events:none; max-width:280px; box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+.hover-tip b { color:#4ecdc4; }
+
+.period-badge { background:#333; color:#4ecdc4; border-radius:4px; padding:1px 6px; font-size:11px; }
+/* 手机端 6.78 寸 (≤430px) 专用排版 */
+@media (max-width: 430px){
+  .container { padding:4px; max-width:100%; }
+  .topbar { flex-wrap:wrap; gap:4px; padding:8px 0; }
+  .logo { font-size:14px; }
+  .status { font-size:10px; }
+  .topbar > div:last-child { display:flex; gap:3px; }
+  .topbar button { padding:3px 6px !important; font-size:11px !important; }
+  .panel { padding:8px; border-radius:6px; margin-bottom:8px; }
+    .panel-title { font-size:12px; margin-bottom:4px; }
+    .setup-row { flex-direction:column; align-items:stretch; gap:4px; margin-bottom:4px; }
+    .setup-row select, .setup-row input, .setup-row button { width:100% !important; font-size:12px; padding:5px 8px; }
+    .tplus1-label .switch { width:34px; height:20px; }
+    .tplus1-label .slider::before { width:14px; height:14px; left:3px; top:3px; }
+    .tplus1-label .switch input:checked + .slider::before { transform:translateX(14px); }
+    .tplus1-label .switch-text { font-size:11px; }
+  .setup-row select, .setup-row input { padding:3px 6px; }
+  #btnStart { padding:10px; font-size:14px; width:100% !important; }
+  .period-filter-btn { font-size:10px; padding:3px 8px; }
+  .asset-bar { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; margin-bottom:3px; }
+  .asset-item { padding:2px 4px; min-width:0; }
+  .asset-item .label { font-size:8px; }
+  .asset-item .value { font-size:10px; }
+  #btnBuy1, #btnBuyHalf, #btnSell1, #btnSellHalf { flex:1 1 45%; min-width:0; margin:1px; }
+  #inpQty { flex:1 1 100%; }
+  #btnBuyQty, #btnSellQty { flex:1 1 45%; margin:1px; }
+  #btnAdvance, #btnAdvance5, #btnAuto { flex:1 1 30%; margin:1px; }
+  #btnExit { flex:1 1 100%; margin:1px; }
+  #selAutoInt { flex:1 1 45%; }
+  #curBarInfo { font-size:9px; line-height:1.2; margin-left:0; width:100%; text-align:center; }
+  #chart { min-height:220px; }
+  .legend { gap:3px; margin:3px 0; }
+  .legend > span { font-size:9px; padding:1px 4px; }
+  .trade-row { gap:0; margin-top:4px; flex-wrap:wrap; }
+  .trade-row:first-of-type { margin-top:0; }
+  .trade-row button { font-size:11px; padding:5px 6px; }
+  .qty-input { width:100%; margin-top:2px; font-size:12px; padding:5px 8px; }
+  .trade-log { max-height:120px; }
+  table { font-size:10px; }
+  th, td { padding:3px 4px; }
+  #btnSaveResult, #btnBackToSim, #btnAgain, #btnNewSetup { flex:1 1 45%; margin:1px; }
+  #btnNewSetup, #btnAgain { font-size:10px; }
+  #inpNickname { width:100% !important; font-size:12px; padding:5px 8px; }
+  .modal { width:98%; padding:8px; }
+  .progress { margin-top:3px; height:4px; }
+  #boardTable td, #boardTable th, #modalBoardBody td, #modalBoardBody th { font-size:9px; padding:2px 3px; }
+  #boardPrev, #boardNext, #btnModalBoardPrev, #btnModalBoardNext { font-size:9px; padding:2px 6px; }
+  .toast { font-size:11px; padding:6px 12px; bottom:15px; }
+  .result-grid { grid-template-columns:repeat(2,1fr); gap:4px; }
+  .result-item { padding:5px; }
+  .result-item .value { font-size:12px; }
+}
+
+/* 手机横版 (≤900px 且横屏)：左图右交易 */
+@media (max-width: 900px) and (orientation: landscape){
+  .container { padding:4px 8px; max-width:100%; }
+  .topbar { padding:4px 0; }
+  .logo { font-size:13px; }
+  .status { font-size:9px; }
+  .topbar button { padding:2px 5px !important; font-size:10px !important; }
+  .panel { padding:6px; border-radius:6px; margin-bottom:4px; }
+  .panel-title { font-size:11px; margin-bottom:3px; }
+
+  /* 设置面板：水平排列 */
+  .setup-row { flex-direction:row; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:3px; }
+  .setup-row select, .setup-row input, .setup-row button { width:auto !important; font-size:11px; padding:3px 6px; flex:1 1 auto; }
+  .setup-row label { font-size:10px; white-space:nowrap; }
+  #btnStart { padding:6px 16px; font-size:12px; width:auto !important; flex:0 0 auto; }
+  .period-filter-btn { font-size:9px; padding:2px 6px; }
+
+  /* 横版 playPanel：2:1 左图右交易 */
+  #playPanel { display:grid; grid-template-columns: 66.7% 33.3%; gap:2px; height:calc(100vh - 80px); }
+  #playPanel > .legend { grid-column:1; grid-row:1; }
+  #playPanel > #chart { grid-column:1; grid-row:2 / span 6; min-height:0; max-height:none; height:100%; }
+  /* 2026-08-30 修复: 横屏资产区分 2 行 — 第1行: 总资产/可用资金/持仓/持仓均价(4项), 第2行: 浮动盈亏/已实现盈亏/进度(3项) */
+  #playPanel > .asset-bar { grid-column:2; grid-row:1; display:flex !important; flex-direction:row; flex-wrap:wrap; gap:2px; margin:0; align-content:flex-start; }
+  /* 按行区分宽度 + 自适应: basis 保证 4/3 分组换行, grow 让列宽随容器自适应伸缩并铺满整行 */
+  #playPanel .asset-item:nth-child(-n+4) { flex:1 0 24% !important; }
+  #playPanel .asset-item:nth-child(n+5) { flex:1 0 32% !important; }
+  #playPanel .asset-item { padding:1px 4px; min-width:0; box-sizing:border-box; text-align:left; }
+  #playPanel .asset-item .label { font-size:8px; white-space:nowrap; }
+  #playPanel .asset-item .value { font-size:10px; white-space:nowrap; }
+  /* 进度项内嵌进度条, 独立条移除避免重复 */
+  #playPanel > .progress { display:none; }
+  #playPanel > #tradeHint { grid-column:2; grid-row:3; margin:0; font-size:9px; }
+  #playPanel > .trade-row { grid-column:2; flex-wrap:wrap; gap:1px; margin:0; }
+  #playPanel > .trade-row:nth-of-type(1) { grid-row:4; }  /* 买卖按钮 */
+  #playPanel > .trade-row:nth-of-type(2) { grid-row:5; }  /* 推进/自动 */
+  #playPanel > .panel:nth-of-type(1) { grid-column:2; grid-row:6; margin:0; padding:3px; }
+  #playPanel > .panel:nth-of-type(1) .panel-title { font-size:10px; margin-bottom:2px; }
+
+  /* 资产指标 (通用兜底; #playPanel 内专属 flex-basis 见上方 2026-08-30 修复) */
+  #playPanel .asset-item { flex:1; }
+  .asset-item { padding:1px 3px; min-width:0; flex:1; }
+  .asset-item .label { font-size:7px; }
+  .asset-item .value { font-size:10px; }
+  .asset-item:nth-child(4) .label, .asset-item:nth-child(6) .label { font-size:6px; }
+
+  .legend { gap:1px; margin:0; line-height:1; flex-wrap:nowrap; overflow-x:auto; }
+  .legend > span { font-size:7px; padding:1px 2px; line-height:1.2; white-space:nowrap; }
+
+  .trade-row button { font-size:11px; padding:3px 5px; }
+  #btnBuy1, #btnBuyHalf, #btnSell1, #btnSellHalf { flex:1 1 48%; margin:0; }
+  #inpQty { width:100% !important; flex:1 1 100%; padding:3px 5px; font-size:11px; }
+  #btnBuyQty, #btnSellQty { flex:1 1 45%; margin:1px; }
+  #btnAdvance, #btnAdvance5, #btnAuto { flex:1 1 30%; margin:1px; }
+  #btnExit { flex:0 0 auto; }
+  #selAutoInt { width:70px !important; }
+  #curBarInfo { font-size:8px; width:100%; text-align:center; margin-left:0; }
+  .bc-label { font-size:4px !important; padding:1px 2px !important; }
+
+  .trade-log { max-height:50px; }
+  table { font-size:8px; }
+  th, td { padding:1px 2px; }
+
+  .result-grid { grid-template-columns:repeat(4,1fr); gap:3px; }
+  .result-item { padding:4px; }
+  .result-item .value { font-size:11px; }
+  #btnSaveResult, #btnBackToSim, #btnAgain, #btnNewSetup { flex:0 0 auto; padding:4px 10px; font-size:10px; }
+  #inpNickname { width:160px !important; font-size:11px; padding:4px 8px; }
+
+  .modal { width:96%; padding:6px; }
+  .modal .setup-row { flex-direction:row; }
+  .modal .setup-row select, .modal .setup-row input { width:auto !important; }
+
+  .progress { margin-top:2px; height:3px; }
+  #boardTable td, #boardTable th, #modalBoardBody td, #modalBoardBody th { font-size:8px; padding:2px; }
+  .toast { font-size:10px; padding:4px 10px; bottom:10px; }
+  .file-input-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  .file-name{flex:1;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+
+
+.file-input-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.file-name{flex:1;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* CSV 历史折叠区（CSV 导入弹窗内） */
+.csv-history-box{margin:6px 0;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.06);overflow:hidden}
+.csv-history-header{padding:6px 10px;background:rgba(255,255,255,0.04);cursor:pointer;font-size:12px;color:var(--text);display:flex;align-items:center;gap:6px;user-select:none}
+.csv-history-header::after{content:'▼';margin-left:auto;font-size:10px;color:var(--muted);transition:transform .2s}
+.csv-history-box.collapsed .csv-history-body{display:none}
+.csv-history-box.collapsed .csv-history-header::after{content:'▶'}
+.csv-history-body{padding:4px 6px;max-height:140px;overflow-y:auto}
+.csv-history-body ul{list-style:none;margin:0;padding:0}
+.csv-history-row{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;font-size:11px;border-radius:4px}
+.csv-history-row:hover{background:rgba(78,205,196,0.08)}
+.csv-history-row .csv-name{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:6px}
+.csv-history-row .csv-meta{flex:0 0 auto;color:var(--muted);font-size:10px;margin:0 8px;white-space:nowrap}
+.csv-history-row .csv-dl{flex:0 0 auto;padding:0 6px;color:var(--danger);cursor:pointer;font-size:12px}
+.csv-history-empty{padding:6px;font-size:11px;color:var(--muted);text-align:center}
+</style>
+<script src="static/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="logo"><span>📈</span><span data-i18n="app_title">大富翁之生财有道</span></div>
+    <div class="status" id="statusBar">离线数据</div>
+    <div>
+      <button class="btn btn-gray" id="btnLang" title="切换语言 / Switch Language" style="padding:4px 10px;font-size:12px">🇨🇳</button>
+      <button class="btn btn-gray" id="btnTheme" data-i18n-title="theme_toggle" title="切换日间/夜间" style="padding:4px 10px;font-size:12px">🌙</button>
+    </div>
+  </div>
+
+  <div class="panel" id="setupPanel">
+    <div class="panel-title"><span>🎯</span><span data-i18n="panel_start">开始模拟</span></div>
+    <div class="setup-row">
+      <label data-i18n="label_symbol">标的</label>
+      <select id="selSymbol" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px"></select>
+      <label data-i18n="label_init_asset">初始资金</label>
+      <input type="number" id="inpAsset" value="1000000" style="width:120px">
+      <label data-i18n="label_window_size">模拟K线总数</label>
+      <select id="selWindow" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px">
+        <option value="100">100</option>
+        <option value="200" selected>200</option>
+        <option value="300">300</option>
+        <option value="400">400</option>
+        <option value="500">500</option>
+      </select>
+      <button class="btn btn-gray" id="btnCsvUpload" data-i18n-title="label_csv_upload" title="上传 K线OHLC CSV(+绘图分析 CSV 可选)"><span>📂</span><span data-i18n="btn_csv_import">CSV导入</span></button>
+      <button class="btn btn-gray" id="btnBoardTop" data-i18n-title="panel_leaderboard"><span>🏅</span><span data-i18n="btn_leaderboard">排行榜</span></button>
+    </div>
+    <div class="setup-row" style="margin-top:4px;justify-content:center">
+      <label class="tplus1-label">
+        <span class="switch-text" data-i18n="label_tplus1">T+1(30分钟同日不可卖出)</span>
+        <span class="switch"><input type="checkbox" id="chkTplus1" checked><span class="slider"></span></span>
+      </label>
+      <label class="tplus1-label" style="margin-left:16px">
+        <span class="switch-text" title="BOLL(20,2) 布林带叠加主图">BOLL指标</span>
+        <span class="switch"><input type="checkbox" id="chkBoll" checked><span class="slider"></span></span>
+      </label>
+    </div>
+    <div class="setup-row" style="margin-top:8px;flex-wrap:wrap;justify-content:center;gap:6px">
+      <button class="btn" id="btnStart"><span>▶</span><span data-i18n="btn_start">开始模拟</span></button>
+      <span id="userInfo" style="font-size:11px;color:var(--muted);background:var(--panel-bg);padding:2px 10px;border-radius:10px"></span>
+      <span id="symbolInfo" style="font-size:11px;color:var(--muted);background:var(--panel-bg);padding:2px 10px;border-radius:10px"></span>
+    </div>
+  </div>
+
+  <div class="modal-mask hidden" id="csvModal" onclick="if(event.target===this)closeCsvModal()">
+    <div class="modal" style="max-width:480px">
+      <div class="panel-title"><span>📂</span><span data-i18n="panel_csv">CSV 导入模拟</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px" data-i18n="label_csv_upload">K线OHLC CSV 文件必须上传；绘图分析 CSV 可选（有则展示缠论绘图）</div>
+      <div class="setup-row" style="flex-direction:column;align-items:stretch;gap:10px">
+        <label style="font-size:13px;color:var(--muted)" data-i18n="label_csv_ohlc">K线OHLC CSV <b style="color:#ff6b6b">*</b></label>
+        <div style="display:grid;grid-template-columns:min-content min-content 1fr;gap:0 8px;align-items:center;width:100%">
+          <input type="file" id="csvOhl" accept=".csv" class="file-input-hidden">
+          <button type="button" class="btn btn-gray file-btn" data-target="csvOhl" style="padding:6px 12px;font-size:12px;white-space:nowrap"><span data-i18n="file_placeholder">📂 选文件</span></button>
+          <span class="file-name" data-i18n-target="csvOhl" data-i18n-no="file_no_file" style="min-width:0">未选择任何文件</span>
+        </div>
+        <label style="font-size:13px;color:var(--muted)" data-i18n="label_csv_step25">绘图分析 CSV (可选)</label>
+        <div style="display:grid;grid-template-columns:min-content min-content 1fr;gap:0 8px;align-items:center;width:100%">
+          <input type="file" id="csvStep25" accept=".csv" class="file-input-hidden">
+          <button type="button" class="btn btn-gray file-btn" data-target="csvStep25" style="padding:6px 12px;font-size:12px;white-space:nowrap"><span data-i18n="file_placeholder">📂 选文件</span></button>
+          <span class="file-name" data-i18n-target="csvStep25" data-i18n-no="file_no_file" style="min-width:0">未选择任何文件</span>
+        </div>
+      </div>
+      <div class="csv-history-box" id="csvHistoryBox">
+        <div class="csv-history-header" data-i18n="csv_history">📂 最近CSV导入</div>
+        <div class="csv-history-body" id="csvHistoryBody">
+          <ul id="csvHistoryList"></ul>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin:6px 0 4px;text-align:center" data-i18n="csv_setup_hint">保存后请到标的列表选择，配置资金/K线数/T+1 后开始模拟</div>
+      <div class="setup-row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn btn-gray" id="btnCsvCancel" data-i18n="lb_close">取消</button>
+        <button class="btn" id="btnCsvStart"><span>💾</span><span data-i18n="btn_save">保存</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="playPanel">
+    <div class="asset-bar">
+      <div class="asset-item"><div class="label" data-i18n="total_asset">总资产</div><div class="value" id="vTotalAsset">-</div></div>
+      <div class="asset-item"><div class="label" data-i18n="available_cash">可用资金</div><div class="value" id="vCash">-</div></div>
+      <div class="asset-item"><div class="label" data-i18n="position">持仓</div><div class="value" id="vPos">0 股</div></div>
+      <div class="asset-item"><div class="label" data-i18n="avg_cost">持仓均价</div><div class="value" id="vAvgCost">-</div></div>
+      <div class="asset-item"><div class="label" data-i18n="float_profit">浮动盈亏</div><div class="value" id="vProfit">-</div></div>
+      <div class="asset-item"><div class="label" data-i18n="close_profit">已实现盈亏</div><div class="value" id="vCloseProfit">-</div></div>
+      <div class="asset-item"><div class="label" data-i18n="progress">进度</div><div style="display:flex;align-items:center;gap:3px;height:14px"><div class="progress" style="flex:1;margin:0;height:4px"><div class="progress-fill" id="progFill"></div></div><div class="value" id="vProgress" style="flex:0 0 auto">0/100</div></div></div>
+    </div>
+    <div class="progress"><div class="progress-fill" id="progFill"></div></div>
+    <div class="legend" id="legend"></div>
+    <div id="chart"><div class="chart-tip" data-i18n="chart_area">K线图区域</div></div>
+    <div class="setup-row" style="margin-top:4px;font-size:12px;color:var(--muted)" id="tradeHint"></div>
+    <div class="trade-row">
+      <button class="btn btn-green" id="btnBuy1" data-i18n="buy_all">买入全仓</button>
+      <button class="btn btn-green" style="background:#27ae60" id="btnBuyHalf" data-i18n="buy_half">买入半仓</button>
+      <button class="btn btn-red" id="btnSell1" data-i18n="sell_all">卖出全仓</button>
+      <button class="btn btn-red" style="background:#e74c3c" id="btnSellHalf" data-i18n="sell_half">卖出半仓</button>
+      <input type="number" class="qty-input" id="inpQty" data-i18n-placeholder="qty_placeholder" placeholder="股数(100倍数)" min="0" step="100" value="100">
+      <button class="btn btn-blue" id="btnBuyQty" data-i18n="buy_qty">按数量买</button>
+      <button class="btn btn-blue" id="btnSellQty" data-i18n="sell_qty">按数量卖</button>
+    </div>
+    <div class="trade-row">
+      <button class="btn" id="btnAdvance" data-i18n="advance_one">⏭ 下一根</button>
+      <button class="btn" id="btnAdvance5" data-i18n="advance_five">⏭ 快进5根</button>
+      <button class="btn btn-gray" id="btnAuto" style="width:120px"><span>▶</span><span data-i18n="auto_play">自动播放</span></button>
+      <label style="font-size:12px;color:var(--muted)" data-i18n="interval">间隔</label>
+      <select id="selAutoInt" style="width:90px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px">
+        <option value="1000">1s</option>
+        <option value="5000" selected>5s</option>
+        <option value="10000">10s</option>
+        <option value="30000">30s</option>
+      </select>
+      <button class="btn btn-red" id="btnExit" data-i18n="exit_sim">✖ 退出模拟</button>
+      <span id="curBarInfo" style="font-size:13px;color:var(--muted);margin-left:auto"></span>
+    </div>
+    <div class="panel" style="margin-top:10px;background:var(--bg)">
+      <div class="panel-title" data-i18n="trade_log">📋 交易记录</div>
+      <div class="trade-log"><table id="tradeTable"><thead><tr><th data-i18n="col_time">时间</th><th data-i18n="col_direction">方向</th><th data-i18n="col_price">价格</th><th data-i18n="col_qty">数量</th><th data-i18n="col_amount">金额</th><th data-i18n="col_fee">费用</th><th data-i18n="col_profit">盈亏</th></tr></thead><tbody id="tradeBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="resultPanel">
+    <div class="panel-title"><span>🏆</span><span data-i18n="result_title">模拟结果</span></div>
+    <div class="result-grid" id="resultGrid"></div>
+      <div class="trade-row" style="margin-top:14px;align-items:center;gap:8px">
+        <label style="font-size:12px;color:var(--muted)" data-i18n="lbl_current_nickname">默认昵称</label>
+        <input type="text" id="inpNickname" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;width:160px;font-size:13px">
+        <button class="btn btn-blue" id="btnUpdateNick" style="font-size:12px;padding:6px 14px"><span>✏️</span><span data-i18n="btn_update_nick">修改昵称</span></button>
+        <button class="btn btn-blue" id="btnBackToSim"><span>🔙</span><span data-i18n="result_replay">交易复盘</span></button>
+        <button class="btn" id="btnAgain"><span>🔄</span><span data-i18n="result_again">再来一次</span></button>
+        <button class="btn btn-gray" id="btnNewSetup"><span>⚙</span><span data-i18n="result_reset">重新设置</span></button>
+        <span style="margin-left:6px;font-size:11px;color:var(--muted)" data-i18n="auto_save_hint">成绩已自动保存</span>
+      </div>
+    <div class="panel" style="margin-top:14px;background:var(--bg)">
+      <div class="panel-title"><span>🏅</span><span data-i18n="leaderboard">排行榜</span> <span style="font-size:12px;color:var(--muted);margin-left:8px" id="rankCount"></span></div>
+      <div class="setup-row" style="margin-bottom:6px" id="boardTabRow">
+        <button class="btn btn-gray lb-tab" data-type="rate" style="font-size:12px;padding:4px 12px" onclick="setBoardType('rate')"><span>📈</span><span data-i18n="lb_tab_rate">收益率排名</span></button>
+        <button class="btn btn-gray lb-tab" data-type="count" style="font-size:12px;padding:4px 12px" onclick="setBoardType('count')"><span>🎯</span><span data-i18n="lb_tab_count">交易次数排名</span></button>
+        <button class="btn btn-gray lb-tab" data-type="wins" style="font-size:12px;padding:4px 12px" onclick="setBoardType('wins')"><span>🏆</span><span data-i18n="lb_tab_wins">盈利次数排名</span></button>
+      </div>
+      <div class="setup-row" style="margin-bottom:8px;justify-content:flex-end">
+        <button class="btn btn-gray" id="btnBoardPrev" style="font-size:12px;padding:4px 12px"><span>◀</span> <span data-i18n="lb_prev">上一页</span></button>
+        <span id="boardPage" style="font-size:12px;color:var(--muted)">1/1</span>
+        <button class="btn btn-gray" id="btnBoardNext" style="font-size:12px;padding:4px 12px"><span data-i18n="lb_next">下一页</span> <span>▶</span></button>
+      </div>
+      <div class="trade-log"><table id="boardTable"><thead><tr><th>#</th><th data-i18n="lb_nickname">昵称</th><th data-i18n="lb_symbol">标的</th><th data-i18n="lb_period">周期</th><th data-i18n="lb_profit_rate">盈亏率</th><th data-i18n="lb_profit">盈亏额</th><th data-i18n="lb_trades">交易</th><th data-i18n="lb_win_rate">胜率</th><th data-i18n="lb_time">时间</th></tr></thead><tbody id="boardBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="modal-mask hidden" id="userModal" style="z-index:1001" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="modal">
+      <div class="panel-title" id="userModalTitle" data-i18n="lb_user_stats">👤 用户战绩</div>
+      <div id="userModalStats" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
+      <div class="trade-log" style="max-height:280px;overflow-y:auto">
+        <table><thead><tr><th data-i18n="col_time">时间</th><th data-i18n="lb_symbol">标的</th><th data-i18n="lb_period">周期</th><th data-i18n="lb_profit_rate">盈亏率</th><th data-i18n="lb_profit">盈亏额</th><th data-i18n="lb_trades">交易</th><th data-i18n="lb_win_rate">胜率</th></tr></thead><tbody id="userModalBody"></tbody></table>
+      </div>
+      <div style="margin-top:10px;text-align:right"><button class="btn btn-gray" onclick="$('userModal').classList.add('hidden')" data-i18n="lb_close">关闭</button></div>
+    </div>
+  </div>
+
+  <div class="modal-mask hidden" id="boardModal" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="modal">
+      <div class="panel-title"><span>🏅</span><span data-i18n="leaderboard">排行榜</span> <span style="font-size:12px;color:var(--muted);margin-left:8px" id="modalRankCount"></span></div>
+      <div class="setup-row" style="margin-bottom:6px" id="modalBoardTabRow">
+        <button class="btn btn-gray lb-tab" data-type="rate" style="font-size:12px;padding:4px 12px" onclick="setModalBoardType('rate')"><span>📈</span><span data-i18n="lb_tab_rate">收益率排名</span></button>
+        <button class="btn btn-gray lb-tab" data-type="count" style="font-size:12px;padding:4px 12px" onclick="setModalBoardType('count')"><span>🎯</span><span data-i18n="lb_tab_count">交易次数排名</span></button>
+        <button class="btn btn-gray lb-tab" data-type="wins" style="font-size:12px;padding:4px 12px" onclick="setModalBoardType('wins')"><span>🏆</span><span data-i18n="lb_tab_wins">盈利次数排名</span></button>
+      </div>
+      <div class="setup-row" style="margin-bottom:8px;justify-content:flex-end">
+        <button class="btn btn-gray" id="btnModalBoardPrev" style="font-size:12px;padding:4px 12px"><span>◀</span> <span data-i18n="lb_prev">上一页</span></button>
+        <span id="modalBoardPage" style="font-size:12px;color:var(--muted)">1/1</span>
+        <button class="btn btn-gray" id="btnModalBoardNext" style="font-size:12px;padding:4px 12px"><span data-i18n="lb_next">下一页</span> <span>▶</span></button>
+      </div>
+      <div class="trade-log" style="max-height:360px;overflow-y:auto">
+        <table><thead><tr><th>#</th><th data-i18n="lb_nickname">昵称</th><th data-i18n="lb_symbol">标的</th><th data-i18n="lb_period">周期</th><th data-i18n="lb_profit_rate">盈亏率</th><th data-i18n="lb_profit">盈亏额</th><th data-i18n="lb_trades">交易</th><th data-i18n="lb_win_rate">胜率</th><th data-i18n="lb_time">时间</th></tr></thead><tbody id="modalBoardBody"></tbody></table>
+      </div>
+      <div style="margin-top:10px;text-align:right"><button class="btn btn-gray" onclick="$('boardModal').classList.add('hidden')" data-i18n="lb_close">关闭</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 2026-08-30 离线引擎: JS 移植引擎(与 Python 对拍一致) + 预装数据包, 断网全功能可用 -->
+<script src="static/engine_offline.js"></script>
+<script src="static/data_bundle.js"></script>
+<script>
+// 2026-08-30 PWA: Service Worker 注册 (仅 https 或 localhost 生效; 作用域 / 控制全站)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname))) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('[pwa] SW register failed', e); });
+  });
+}
+
+// 2026-08-31 环境自检: http 访问(SW不生效)→红条; 就绪→绿条确认(3秒); 未就绪→联网等待自动接管, 10秒仍未接管才提示刷新一次
+(function(){
+  function _banner(msg, bg, ms){
+    var el=document.createElement('div');
+    el.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:'+bg+';color:#fff;font-size:12px;padding:8px 12px;text-align:center';
+    el.textContent=msg;
+    document.body.appendChild(el);
+    if(ms) setTimeout(function(){ el.remove(); }, ms);
+    return el;
+  }
+  function _check(){
+    var isLocal=['localhost','127.0.0.1'].includes(location.hostname);
+    if(location.protocol!=='https:' && !isLocal){
+      _banner('⚠ 当前为 http 访问，无法离线使用。请用 https://' + location.hostname + ':8769 重新打开并添加主屏', '#c0392b', 20000);
+      return;
+    }
+    if(!('serviceWorker' in navigator)) return;
+    // SW 已控制本页 → 缓存必已装好(install 时全量预缓存), 绿条确认
+    if(navigator.serviceWorker.controller){
+      _banner('✅ 离线数据已就绪，可断网使用', '#1e8449', 3000);
+      return;
+    }
+    // 未控制: 等 ready (注册+install+claim 全部完成), 通常几秒内自动接管, 无需手动刷新
+    navigator.serviceWorker.ready.then(function(){
+      setTimeout(function(){
+        if(navigator.serviceWorker.controller){
+          _banner('✅ 离线数据已就绪，可断网使用', '#1e8449', 3000);
+        }else{
+          _banner('⚠ 离线缓存未接管，请刷新本页一次', '#c0392b', 15000);
+        }
+      }, 1500);
+    }).catch(function(){});
+  }
+  window.addEventListener('load', _check);
+})();
+
+// UA 设备检测：精确区分电脑/手机/平板
+const UA = navigator.userAgent;
+const _isMobileUA = /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(UA);
+// 关键：iPad iOS13+ 桌面UA伪装，用 touch/maxTouchPoints 兜底
+const _isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+const isMobile = _isMobileUA || (_isTouchDevice && window.innerWidth <= 1024);
+const isTablet = _isMobileUA && /iPad|Tablet/i.test(UA);
+const isDesktop = !isMobile;
+// 手机浏览器强制加 body 类，供 CSS 精确区分
+if(isMobile){ document.body.classList.add('ua-mobile'); }
+else { document.body.classList.add('ua-desktop'); }
+// 触摸设备（手机横屏等）标记
+if(_isTouchDevice){ document.body.classList.add('ua-touch'); }
+
+let sessionId = null;
+let autoTimer = null;
+let symbolData = null;
+let curCode = null;
+let curPeriod = '';
+let lastFinishedState = null;
+let activePeriodFilter = '';
+let _showingReplay = false;
+
+let codeToName = {};
+function getSymbolName(code){ if(code==='CSV' || code===undefined) return t('panel_csv','CSV导入'); if(!code) return '-'; return codeToName[code] || code || '-'; }
+
+// 按 code 找全局序号（不含 period，用于排行榜/用户战绩）
+function symbolIdx(code){
+  const arr = _symsData && _symsData.symbols ? _symsData.symbols : [];
+  const codes = arr.map(x=>x.code).filter((c,i)=>arr.findIndex(z=>z.code===c)===i);
+  return codes.findIndex(x => x === code) + 1;
+}
+// 按 code:period 找 _uniqueSymbols 中的全局序号，返回 "标的N"
+function getSymbolLabel(code, period){
+  const arr = _symsData && _symsData.symbols ? _symsData.symbols : [];
+  const codes = arr.map(x=>x.code).filter((c,i)=>arr.findIndex(z=>z.code===c)===i);
+  const idx = codes.findIndex(x => x === code);
+  if(idx<0) return getSymbolName(code);
+  return t('symbol','标的')+(idx+1);
+}
+
+function $(id){ return document.getElementById(id); }
+function toast(msg){
+  const et = $('toast');
+  et.textContent = msg;
+  et.classList.add('show');
+  setTimeout(()=>et.classList.remove('show'), 2200);
+}
+// ===== 2026-08-30 离线引擎层 =====
+// 后端不可达(断网/无服务器)时, 全部 API 走本地实现:
+// 引擎=window.OfflineEngine (与 Python 对拍一致), 数据=window._DATA_BUNDLE 预装包,
+// 排行榜/用户降级到 localStorage。会话在线创建的仍走服务器, 离线创建的存 _offSessions。
+window._offlineMode = false;
+window._offSessions = {};
+let _probePromise = null;
+
+function _probeServer(){
+  if(!_probePromise){
+    _probePromise = (async ()=>{
+      try{
+        const ctl = new AbortController();
+        const tm = setTimeout(()=>ctl.abort(), 2500);
+        const r = await fetch('/api/symbols', {signal: ctl.signal});
+        clearTimeout(tm);
+        window._offlineMode = !r.ok;
+      }catch(e){ window._offlineMode = true; }
+      if(window._offlineMode) toast('📴 ' + t('offline_mode','离线模式: 本地引擎 + 预装数据') + ' (' + Object.keys(window._DATA_BUNDLE||{}).length + '标的)');
+      return !window._offlineMode;
+    })();
+  }
+  return _probePromise;
+}
+// 网络状态变化时重新探测 (离线→在线切换后新会话走服务器; 已有离线会话不受影响)
+window.addEventListener('online', ()=>{ _probePromise = null; _probeServer(); });
+window.addEventListener('offline', ()=>{ _probePromise = null; _probeServer(); });
+
+function _offBundleKey(code, period){
+  if(code && period && window._DATA_BUNDLE && window._DATA_BUNDLE[code + '_' + period]) return code + '_' + period;
+  if(window._DATA_BUNDLE){
+    // 只给了 code: 取该 code 第一个周期
+    const k = Object.keys(window._DATA_BUNDLE).find(k => k === code || k.startsWith(code + '_'));
+    if(k) return k;
+  }
+  return null;
+}
+
+function _offState(entry){
+  // 与服务器 _csv_state 对齐: 状态附带绘图数据(离线数据本就在本地, 无泄露问题)
+  const st = entry.eng.state();
+  st._symbolData = entry.symbolData;
+  st.is_csv = !!entry.isCsv;
+  return st;
+}
+
+function _offBundleSymbolData(key){
+  const d = window._DATA_BUNDLE[key];
+  return { code: d.code, period: d.period, total: d.total, bars: d.bars,
+           pens: d.pens, segments: d.segments, zhongshu: d.zhongshu };
+}
+
+function _offSaveBoard(rec){
+  try{
+    const arr = JSON.parse(localStorage.getItem('chan_offline_board') || '[]');
+    arr.push(rec);
+    localStorage.setItem('chan_offline_board', JSON.stringify(arr));
+  }catch(e){}
+}
+
+function _offLeaderboard(limit, offset, rankType){
+  let arr = [];
+  try{ arr = JSON.parse(localStorage.getItem('chan_offline_board') || '[]'); }catch(e){}
+  arr.sort((a,b) => rankType === 'profit' ? b.total_profit - a.total_profit : b.profit_rate - a.profit_rate);
+  const page = arr.slice(offset, offset + limit).map((r, i) => ({
+    id: i + 1 + offset, nickname: r.nickname || 'Guest', code: r.code, period: r.period || '',
+    init_asset: r.init_asset, final_asset: r.final_asset, total_profit: r.total_profit,
+    profit_rate: r.profit_rate, trade_count: r.trade_count, win_count: r.win_count,
+    created_at: r.created_at || '',
+  }));
+  return { board: page, total: arr.length };
+}
+
+async function _offlineApi(path, body, opts){
+  opts = opts || {};
+  const method = opts.method || (body ? 'POST' : 'GET');
+  // ---- 会话类: 优先查本地离线会话 ----
+  const sid = body && body.session_id;
+  if(sid && window._offSessions[sid]){
+    const entry = window._offSessions[sid];
+    if(path === '/api/session/advance'){
+      entry.eng.advance(body.n || 1);
+      return _offState(entry);
+    }
+    if(path === '/api/session/buy' || path === '/api/session/sell'){
+      const kind = path.endsWith('buy') ? 'buy' : 'sell';
+      const r = entry.eng[kind](body.ratio, body.qty || null);
+      return Object.assign({}, r, { state: _offState(entry) });
+    }
+    if(path === '/api/session/save_result'){
+      const res = entry.eng.result();
+      const nick = (body.nickname || 'Guest').trim() || 'Guest';
+      _offSaveBoard({ nickname: nick, code: entry.eng.code, period: entry.eng.period,
+        init_asset: res.init_asset, final_asset: res.final_asset, total_profit: res.total_profit,
+        profit_rate: res.profit_rate, trade_count: res.trade_count, win_count: res.win_count,
+        created_at: new Date().toISOString() });
+      return { ok: true, saved: 1, user_id: nick, stats: { total_sessions: 1 } };
+    }
+    if(path === '/api/session/' + sid + '/result'){
+      return entry.eng.result();
+    }
+    if(path === '/api/session/' + sid){
+      return _offState(entry);
+    }
+  }
+  // ---- 其余端点 ----
+  if(method === 'GET' && path === '/api/symbols'){
+    const bundle = window._DATA_BUNDLE || {};
+    return { symbols: Object.keys(bundle).map(k => ({ code: bundle[k].code, period: bundle[k].period })) };
+  }
+  if(method === 'GET' && path.startsWith('/api/data/')){
+    let code = decodeURIComponent(path.slice('/api/data/'.length));
+    let period = '';
+    const qm = code.indexOf('?');
+    if(qm >= 0){ const q = new URLSearchParams(code.slice(qm + 1)); period = q.get('period') || ''; code = code.slice(0, qm); }
+    if(code === 'CSV') throw new Error('CSV 数据仅存在于会话中');
+    const key = _offBundleKey(code, period);
+    if(!key) throw new Error('该标的暂无离线数据，请联网后刷新缓存');
+    return _offBundleSymbolData(key);
+  }
+  if(method === 'POST' && path === '/api/session/start'){
+    const bundle = window._DATA_BUNDLE || {};
+    const key = _offBundleKey(body.code, body.period);
+    const d = key ? bundle[key] : null;
+    if(!d) throw new Error('该标的暂无离线数据，请联网后刷新缓存');
+    if(d.total < body.window_size + 50) throw new Error('K线不足: ' + d.total + ' 根, 需要 ≥ ' + (body.window_size + 50));
+    const eng = new OfflineEngine.SimEngine({
+      code: d.code, bars: d.bars, period: d.period,
+      initAsset: Number(body.init_asset) || 1000000,
+      feesOn: !!body.fees_on, windowSize: body.window_size, tplus1: !!body.tplus1,
+    });
+    window._offSessions[eng.sessionId] = { eng: eng, symbolData: _offBundleSymbolData(key), isCsv: false };
+    return _offState(window._offSessions[eng.sessionId]);
+  }
+  if(method === 'GET' && path.startsWith('/api/leaderboard')){
+    const q = new URLSearchParams(path.split('?')[1] || '');
+    return _offLeaderboard(parseInt(q.get('limit')) || 20, parseInt(q.get('offset')) || 0, q.get('rank_type') || 'rate');
+  }
+  if(method === 'GET' && path.startsWith('/api/user/')){
+    const nick = decodeURIComponent(path.slice('/api/user/'.length)) || 'Guest';
+    return { stats: { total_sessions: 0 }, sessions: [], user: { user_id: nick, nickname: nick } };
+  }
+  if(method === 'PUT' && path === '/api/user/update_nickname'){
+    return { ok: true, user_id: body.nickname, old_nickname: 'Guest', nickname: body.nickname };
+  }
+  throw new Error('离线模式不支持该操作: ' + path);
+}
+
+// 离线 CSV 会话: 直接用本地引擎解析 entry 并创建会话 (供 playCsvEntry 调用)
+function _offlineCsvStart(entry){
+  const ohl = OfflineEngine.parseOhlCsv(entry.ohl_raw);
+  const s25 = entry.step25_raw ? OfflineEngine.parseStep25Csv(entry.step25_raw) : [];
+  const bars = OfflineEngine.mergeBars(ohl, s25);
+  const ws = parseInt($('selWindow').value, 10) || 200;
+  if(bars.length < ws + 50) throw new Error('K线不足: ' + bars.length + ' 根, 需要 ≥ ' + (ws + 50));
+  const period = (entry && entry.period) || '30min';
+  const eng = new OfflineEngine.SimEngine({
+    code: 'CSV', bars: bars, period: period,
+    initAsset: Number($('inpAsset').value) || 1000000,
+    feesOn: false, windowSize: ws, tplus1: $('chkTplus1').checked,
+  });
+  // 构建绘图数据 (与服务器 CSV 路径同构: idx→time 映射)
+  const idx2dt = {};
+  (s25.length ? s25 : bars).forEach(s => { idx2dt[s.idx] = s.datetime; });
+  const ts = dt => OfflineEngine.dtToTs(dt) || 0;
+  const symbolData = {
+    code: 'CSV', period: period, total: bars.length,
+    bars: bars.map(b => ({ idx: b.idx, datetime: b.datetime, time: b.time,
+      open: b.open, high: b.high, low: b.low, close: b.close,
+      signals: b.signals, in_zhongshu: b.in_zhongshu, summacd: b.summacd })),
+    pens: OfflineEngine.extractPens(s25.length ? s25 : bars).map(p => ({
+      ...p, start_time: ts(idx2dt[p.start_idx]), end_time: ts(idx2dt[p.end_idx]) })),
+    segments: OfflineEngine.deriveSegments(bars).map(sg => ({
+      ...sg, from_time: ts(idx2dt[sg.from_idx]), to_time: ts(idx2dt[sg.to_idx]) }))
+      .filter(sg => sg.from_time && sg.to_time),
+    zhongshu: OfflineEngine.deriveZhongshu(bars).map(zs => ({
+      ...zs, x_left_time: ts(idx2dt[zs.x_left]), x_right_time: ts(idx2dt[zs.x_right]) }))
+      .filter(zs => zs.x_left_time && zs.x_right_time),
+  };
+  window._offSessions[eng.sessionId] = { eng: eng, symbolData: symbolData, isCsv: true };
+  return _offState(window._offSessions[eng.sessionId]);
+}
+
+async function api(path, body, opts){
+  await _probeServer();
+  if(window._offlineMode || (body && body.session_id && window._offSessions[body.session_id])){
+    return _offlineApi(path, body, opts);
+  }
+  opts = opts || {};
+  const method = opts.method || (body ? 'POST' : 'GET');
+  const r = await fetch(path, {
+    method: method,
+    headers: body ? {'Content-Type':'application/json'} : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail||('HTTP '+r.status)); }
+  return r.json();
+}
+function fmtMoney(v){ return Number(v).toLocaleString('zh-CN',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtPct(v){ return (v>0?'+':'') + Number(v).toFixed(2) + '%'; }
+function profitClass(v){ return v>=0?'profit-up':'profit-down'; }
+
+function closeCsvModal(){
+  $('csvModal').classList.add('hidden');
+  $('csvOhl').value = '';
+  $('csvStep25').value = '';
+  refreshFileNames();
+}
+
+function openCsvModal(){
+  $('csvModal').classList.remove('hidden');
+  refreshFileNames();
+}
+
+// CSV 文件选择：隐藏原生 input，用自定义按钮 + 文件名显示
+function bindFileInputs(){
+  // 兜底1：window 级 change 事件委托（capture 阶段保证先于其他监听器触发）
+  if(!window._csvChangeBound){
+    window._csvChangeBound = true;
+    window.addEventListener('change', function(e){
+      var tgt = e.target;
+      if(!tgt || tgt.type !== 'file' || !tgt.id) return;
+      var span = document.querySelector('[data-i18n-target="'+tgt.id+'"]');
+      if(span){
+        span.textContent = (tgt.files && tgt.files.length) ? tgt.files[0].name : t('file_no_file','未选择任何文件');
+      }
+    }, true);
+  }
+  // 兜底2（关键）：为每个隐藏 input 直接挂原生 change 监听 —— 不依赖 window 委托，
+  // 即使 button→input 的 click 链没触发或页面加载时序异常也能捕获文件名变更。
+  ['csvOhl','csvStep25'].forEach(function(tid){
+    var inp = document.getElementById(tid);
+    if(!inp) return;
+    if(inp._csvDirectBound) return;
+    inp._csvDirectBound = true;
+    inp.addEventListener('change', function(){
+      var span = document.querySelector('[data-i18n-target="'+tid+'"]');
+      if(span){
+        span.textContent = (inp.files && inp.files.length) ? inp.files[0].name : t('file_no_file','未选择任何文件');
+      }
+    }, false);
+  });
+  // 每个 file-btn 点击时触发对应 input.click()
+  document.querySelectorAll('.file-btn').forEach(function(btn){
+    btn.onclick = function(){
+      var tid = btn.getAttribute('data-target');
+      var inp = document.getElementById(tid);
+      if(inp) inp.click();
+    };
+  });
+  // 首次绑定：初始化一次显示
+  refreshFileNames();
+}
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bindFileInputs); } else { bindFileInputs(); }
+
+// 切语言时同步刷新 file-name 占位
+function refreshFileNames(){
+  document.querySelectorAll('[data-i18n-target]').forEach(function(span){
+    var tid = span.getAttribute('data-i18n-target');
+    var inp = document.getElementById(tid);
+    if(inp){
+      span.textContent = (inp.files && inp.files.length) ? inp.files[0].name : t('file_no_file','未选择任何文件');
+    }
+  });
+}
+
+function drawChart(data){
+  const allBars = data.bars || [];
+  const trades = data.trades || [];
+  const histIdx = data.hist_idx != null ? data.hist_idx : (data.is_finished || !data._csv || data.total_bars ? allBars.length - 1 : 49);
+  const isFinished = !!data.is_finished;
+  if(allBars.length < 2) return;
+  const period = curPeriod || '30min';
+  function toTime(dt, p){
+    return Math.floor(new Date(dt.replace(' ','T')).getTime() / 1000);
+  }
+  const revealed = Math.min(histIdx, allBars.length - 1);
+  // 2026-08-14 简化方案：模拟中只显示K线+MACD到 revealed；复盘时全量显示
+  const showEnd = isFinished ? allBars.length : Math.max(revealed + 1, 2);
+  const bars = allBars.slice(0, showEnd);
+  if(bars.length < 2) return;
+  // 2026-08-13 对齐8765: 完整数据集 symbolData.bars 作为笔/线段/中枢的 time 查找基准
+  if(symbolData && symbolData.bars) symbolData.bars.forEach(b => { if(!b.time) b.time = toTime(b.datetime, period); });
+  allBars.forEach(b => { if(!b.time) b.time = toTime(b.datetime, period); });
+  bars.forEach(b => { if(!b.time) b.time = toTime(b.datetime, period); });
+  // 用完整数据做查找（对齐8765: bars 是完整数据集, findWsIdxByTime 用完整 bars）
+  const lookupBars = (symbolData && symbolData.bars && symbolData.bars.length >= allBars.length) ? symbolData.bars : bars;
+
+  if(!window._lc){
+    const cv = document.getElementById('chart');
+    cv.innerHTML = '';
+    const div = document.createElement('div'); div.id = 'lcChart'; div.style.height = '100%';
+    cv.appendChild(div);
+    const isLandscape = isMobile && window.innerWidth <= 900 && window.innerHeight < window.innerWidth;
+    const chartFontSize = isMobile ? (isLandscape ? 8 : 11) : 11;
+    // 用当前主题颜色初始化（避免日间模式进入时 chart 默认为暗色）
+    const isLight = window._theme === 'light';
+    const _bg = isLight ? '#ffffff' : '#1a1a2e';
+    const _fg = isLight ? '#1a1a1a' : '#888';
+    const _grid = isLight ? '#e8e8e8' : '#2a2a4a';
+    const _border = isLight ? '#ddd' : '#333';
+    window._lc = {
+      chart: LightweightCharts.createChart(div, {
+        height: cv.clientHeight || Math.max(cv.offsetHeight, window.innerHeight * 0.5),
+        layout: {background:{color:_bg},textColor:_fg, fontSize: chartFontSize},
+        grid: {vertLines:{color:_grid},horzLines:{color:_grid}},
+        timeScale: {borderColor:_border, timeVisible: period!=='day', secondsVisible:false, rightPadding:10, barSpacing:0.6, shiftVisibleRangeOnNewBar:true, fontSize: chartFontSize},
+        rightPriceScale: {borderColor:_border, fontSize: chartFontSize},
+        localization: {locale: window._chartLocale || 'en-US'},
+      }),
+      candleSeries: null, penSeries: [], segSeries: [], zsSeries: [],
+      difSeries: null, deaSeries: null, macdHistSeries: null,
+      bollUpper: null, bollMid: null, bollLower: null,
+      firstDraw: true, hist_idx: histIdx,
+    };
+    const lc = window._lc;
+    lc.candleSeries = lc.chart.addSeries(LightweightCharts.CandlestickSeries, {
+      upColor:'#2ECC71', downColor:'#FF0000',
+      borderUpColor:'#2ECC71', borderDownColor:'#FF0000',
+      wickUpColor:'#27AE60', wickDownColor:'#DC143C',
+    });
+    const macdPane = lc.chart.addPane();
+    // 横版：K线更大(4:1)，竖版/桌面：3:1
+    macdPane.setStretchFactor(1);
+    lc.chart.panes()[0].setStretchFactor(isLandscape ? 4 : 3);
+    macdPane.priceScale('right').applyOptions({scaleMargins:{top:0,bottom:0}});
+    lc.macdHistSeries = macdPane.addSeries(LightweightCharts.HistogramSeries, {color:'#00C853', priceScaleId:'right', borderVisible:false, priceLineVisible:false, priceFormat:{type:'price',precision:4,minMove:0.0001}});
+    lc.difSeries = macdPane.addSeries(LightweightCharts.LineSeries, {color:'#2196F3', lineWidth:1, priceScaleId:'right', priceFormat:{type:'price',precision:4,minMove:0.0001}});
+    lc.deaSeries = macdPane.addSeries(LightweightCharts.LineSeries, {color:'#FF6B6B', lineWidth:1, priceScaleId:'right', priceFormat:{type:'price',precision:4,minMove:0.0001}});
+    // 2026-08-30 BOLL(20,2) 布林带叠加主图 (仅模拟交易主图; 开关 chkBoll)
+    const bollFormat = {type:'price',precision:2,minMove:0.01};
+    lc.bollUpper = lc.chart.addSeries(LightweightCharts.LineSeries, {color:'#FF9800', lineWidth:1, lineStyle:LightweightCharts.LineStyle.Dashed, priceLineVisible:false, lastValueVisible:false, priceFormat:bollFormat});
+    lc.bollLower = lc.chart.addSeries(LightweightCharts.LineSeries, {color:'#E040FB', lineWidth:1, lineStyle:LightweightCharts.LineStyle.Dashed, priceLineVisible:false, lastValueVisible:false, priceFormat:bollFormat});
+    lc.bollMid   = lc.chart.addSeries(LightweightCharts.LineSeries, {color:'#9E9E9E', lineWidth:1, lineStyle:LightweightCharts.LineStyle.Dotted, priceLineVisible:false, lastValueVisible:false, priceFormat:bollFormat});
+  }
+  const lc = window._lc;
+
+  lc.candleSeries.setData(bars.map(b=>({time:toTime(b.datetime,period),open:b.open,high:b.high,low:b.low,close:b.close})));
+
+  // 2026-08-14 双层遮掩：全量数据渲染，初始显示全部，用掩码遮挡未播放部分
+  if(lc.firstDraw){
+    // 全量可见范围
+    if(bars.length >= 2){
+      lc.chart.timeScale().setVisibleRange({
+        from: toTime(bars[0].datetime, period),
+        to: toTime(bars[bars.length-1].datetime, period)
+      });
+    }
+    lc.chart.timeScale().applyOptions({
+      rightOffset: 5
+    });
+    lc.firstDraw = false;
+  }
+
+  lc.penSeries.forEach(s => { try{lc.chart.removeSeries(s)}catch(e){} });
+  lc.segSeries.forEach(s => { try{lc.chart.removeSeries(s)}catch(e){} });
+  lc.zsSeries.forEach(s => { try{lc.chart.removeSeries(s)}catch(e){} });
+  lc.penSeries = []; lc.segSeries = []; lc.zsSeries = [];
+
+  // 2026-08-14 简化方案：模拟中不画缠论绘图（笔/线段/中枢/BC标签），复盘时全量显示
+  if(isFinished){
+    // 复盘: K线已切换为全量, 同步更新可视范围到全量区间 (否则视口仍停留在模拟窗口段)
+    try{ lc.chart.timeScale().setVisibleRange({from: toTime(bars[0].datetime,period), to: toTime(bars[bars.length-1].datetime,period)}); }catch(e){}
+
+  // 二分查找: time 值在 lookupBars 中的索引 (对齐8765: 用完整数据集的 bars 查找)
+  function findBarIdxByTime(timeInt) {
+    if(!timeInt || !lookupBars || !lookupBars.length) return -1;
+    let lo=0, hi=lookupBars.length-1;
+    while(lo<=hi){
+      const mid=(lo+hi)>>1;
+      if(lookupBars[mid].time===timeInt) return mid;
+      if(lookupBars[mid].time<timeInt) lo=mid+1;
+      else hi=mid-1;
+    }
+    if(hi>=0 && Math.abs(lookupBars[hi].time-timeInt)<=300) return hi;
+    if(lo<lookupBars.length && Math.abs(lookupBars[lo].time-timeInt)<=300) return lo;
+    return -1;
+  }
+
+  // 2026-08-13 BUG-A修复: bars 元素没有 time 字段, 必须用 toTime() 从 datetime 算
+  // 否则 tMin/tMax 恒为 0 → 所有笔/线段/中枢被当成"未来时间"跳过 (penSeries=0)
+  const tMin = bars.length ? toTime(bars[0].datetime, period) : 0;
+  const tMax = bars.length ? toTime(bars[bars.length-1].datetime, period) : 0;
+
+  // 2026-08-13 对齐8765: resolveTime 用 time 二分查找 lookupBars
+  function _resolveTime(timeVal, idxVal){
+    if(timeVal){
+      const bi = findBarIdxByTime(timeVal);
+      if(bi >= 0) return lookupBars[bi].time;
+    }
+    // 注意: 不可用 lookupBars[idxVal] 回退 — bars 可能不从 idx=0 开始(如601899 day idx=3800)
+    return timeVal || 0;
+  }
+
+  // 笔: 用 time 值直接定位 (对齐 8765: 窗口外端点钳位到边界, 不跳过)
+  if(symbolData && symbolData.pens){
+    symbolData.pens.forEach(p => {
+      let sT = _resolveTime(p.start_time, p.start_idx);
+      let eT = _resolveTime(p.end_time, p.end_idx);
+      if(!sT || !eT) return;
+      // 2026-08-29 跳过式: 任一端点在窗口外则不画(消除首末K垂直/压缩)
+      if(sT < tMin || sT > tMax || eT < tMin || eT > tMax) return;
+      const color = p.direction==='up' ? '#00C853' : '#FF5252';
+      const s = lc.chart.addSeries(LightweightCharts.LineSeries,{
+        color, lineWidth:2, lineStyle:LightweightCharts.LineStyle.Dashed,
+        priceLineVisible:false, lastValueVisible:false
+      });
+      s.setData([{time:sT, value:p.start_price},{time:eT, value:p.end_price}]);
+      lc.penSeries.push(s);
+    });
+  }
+
+  // 线段: 按方向分色 — 对齐8765: 向上=蓝实线(#2196F3) / 向下=黄虚线(#FFC107)
+  if(symbolData && symbolData.segments){
+    symbolData.segments.forEach(sg => {
+      let fT = _resolveTime(sg.from_time, sg.from_idx);
+      let tT = _resolveTime(sg.to_time, sg.to_idx);
+      if(!fT || !tT) return;
+      // 2026-08-29 跳过式: 任一端点在窗口外则不画(消除首末K垂直/压缩)
+      if(fT < tMin || fT > tMax || tT < tMin || tT > tMax) return;
+      const isUp = (sg.label||'').indexOf('向上') >= 0 || (sg.from_price && sg.to_price && sg.to_price > sg.from_price);
+      // 2026-08-27 修复: 下跌线段不再用虚线, 统一蓝色实线与上涨线段一致
+      const color = '#2196F3';
+      const style = LightweightCharts.LineStyle.Solid;
+      const lw = 2.5;
+      const s = lc.chart.addSeries(LightweightCharts.LineSeries,{
+        color, lineWidth:lw, lineStyle:style,
+        priceLineVisible:false, lastValueVisible:false
+      });
+      s.setData([{time:fT, value:sg.from_price},{time:tT, value:sg.to_price}]);
+      lc.segSeries.push(s);
+    });
+  }
+
+  // 中枢: 对齐8765 — 粉色 #ff85ff，只画4条边线，不加Area填充
+  if(symbolData && symbolData.zhongshu){
+    const zsColor = '#ff85ff';
+    symbolData.zhongshu.forEach(zs => {
+      let tL = _resolveTime(zs.x_left_time, zs.x_left);
+      let tR = _resolveTime(zs.x_right_time, zs.x_right);
+      if(!tL || !tR) return;
+      // 2026-08-29 跳过式: 任一端点在窗口外则不画(消除首末K垂直/压缩)
+      if(tL < tMin || tL > tMax || tR < tMin || tR > tMax) return;
+      const ZG = zs.y_top, ZD = zs.y_bottom;
+      [[tL, ZG, tR, ZG],[tL, ZD, tR, ZD],[tL, ZG, tL, ZD],[tR, ZG, tR, ZD]].forEach(([x1,y1,x2,y2])=>{
+        const s = lc.chart.addSeries(LightweightCharts.LineSeries,{color:zsColor, lineWidth:1, priceLineVisible:false, lastValueVisible:false});
+        s.setData([{time:x1, value:y1},{time:x2, value:y2}]);
+        lc.zsSeries.push(s);
+      });
+    });
+  }
+  } // end if(isFinished) — 缠论绘图仅复盘时显示
+
+  // 买卖标记 (顶底分型已移除 #7) — 模拟中和复盘都显示
+  try{ renderTradeMarkers(bars, trades, period, isFinished); }catch(e){}
+  // BC 缠论标签 — 仅复盘时显示
+  if(isFinished){
+    try{ renderBCLabels(bars, symbolData, period, lc.chart, lc.candleSeries); }catch(e){ console.error('renderBCLabels err', e); }
+    try{ renderSummacdLabels(bars, symbolData, period, lc.chart, lc.candleSeries); }catch(e){ console.error('renderSummacdLabels err', e); }
+  }
+
+  const closes = bars.map(b=>b.close);
+  const macd = calcMACD(closes);
+  const times = bars.map(b=>toTime(b.datetime,period));
+  lc.macdHistSeries.setData(times.map((t,i)=>({time:t,value:macd.hist[i],color:macd.hist[i]>=0?'#ff6b6b':'#2ecc71'})));
+  lc.difSeries.setData(times.map((t,i)=>({time:t,value:+macd.dif[i].toFixed(4)})));
+  lc.deaSeries.setData(times.map((t,i)=>({time:t,value:+macd.dea[i].toFixed(4)})));
+
+  // 2026-08-30 BOLL(20,2): 中轨=20周期SMA, 上下轨=中轨±2倍标准差; 开关关闭时清空
+  // 缓存当前K线上下文, 交给 refreshBoll() 统一计算(setData), 实现开关即时生效
+  try{
+    window._bollCtx = {times: times, closes: closes};
+    refreshBoll();
+  }catch(e){ console.error('boll err', e); }
+}
+
+// 2026-08-30 抽出 BOLL 刷新函数: 供 drawChart 渲染与 chkBoll 开关 change 复用
+// 读取 window._bollCtx 缓存的最新K线(closes/times), 按开关状态即时重绘布林带
+function refreshBoll(){
+  const lc = window._lc;
+  const ctx = window._bollCtx;
+  const bollOn = !document.getElementById('chkBoll') || document.getElementById('chkBoll').checked;
+  const clearAll = function(){
+    if(!lc) return;
+    if(lc.bollUpper) lc.bollUpper.setData([]);
+    if(lc.bollMid) lc.bollMid.setData([]);
+    if(lc.bollLower) lc.bollLower.setData([]);
+  };
+  if(!lc || !lc.bollUpper || !ctx || !bollOn){ clearAll(); return; }
+  const closes = ctx.closes || [], times = ctx.times || [];
+  const P = 20, K = 2;
+  if(times.length < P){ clearAll(); return; }
+  const upper=[], mid=[], lower=[];
+  for(let i=0;i<times.length;i++){
+    if(i < P-1) { upper.push({time:times[i],value:null}); mid.push({time:times[i],value:null}); lower.push({time:times[i],value:null}); continue; }
+    let sum=0;
+    for(let j=i-P+1;j<=i;j++) sum+=closes[j];
+    const avg=sum/P;
+    let sq=0;
+    for(let j=i-P+1;j<=i;j++) sq+=(closes[j]-avg)*(closes[j]-avg);
+    const sd=Math.sqrt(sq/P);
+    upper.push({time:times[i],value:+(avg+K*sd).toFixed(2)});
+    mid.push({time:times[i],value:+avg.toFixed(2)});
+    lower.push({time:times[i],value:+(avg-K*sd).toFixed(2)});
+  }
+  // 空值点用whitespace处理, 避免画线断开警告
+  const clean=a=>a.filter(p=>p.value!==null);
+  lc.bollUpper.setData(clean(upper));
+  lc.bollMid.setData(clean(mid));
+  lc.bollLower.setData(clean(lower));
+}
+
+// 2026-08-30 BOLL 开关即时生效: 切换时立即重绘布林带(无需等待下一次K线渲染)
+(function bindBollToggle(){
+  function attach(){
+    var cb = document.getElementById('chkBoll');
+    if(cb && !cb._bollBound){
+      cb._bollBound = true;
+      cb.addEventListener('change', function(){ try{ refreshBoll(); }catch(e){ console.error('boll toggle', e); } });
+    }
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', attach); } else { attach(); }
+})();
+
+let _bcRaf = null;
+let _bcLabels = [];
+let _tradeLabels = [];
+let _tradeRaf = null;
+const _bcTypes = ['is_SZBBC','is_XDBBC','is_SZ5BBC','is_XD5BBC','is_SZ7BBC','is_XD7BBC','is_SZZSPZBC','is_XDZSPZBC','is_SZQSBC','is_XDQSBC'];
+const _bcColorMap = {'SZQSBC':'#FFD700','XDQSBC':'#FF69B4','SZZSPZBC':'#FFD93D','XDZSPZBC':'#FFD93D','SZBBC':'#FF0000','XDBBC':'#32CD32','SZ5BBC':'#FF0000','XD5BBC':'#32CD32','SZ7BBC':'#FF0000','XD7BBC':'#32CD32'};
+const _bcPriority = {'QSBC':1,'ZSPZBC':2,'7BBC':3,'5BBC':4,'BBC':5};
+
+function buildBcLabels(symbolData){
+  if(!symbolData || !symbolData.bars) return [];
+  const byIdx = {};
+  symbolData.bars.forEach(b => {
+    if(!b.signals) return;
+    b.signals.forEach(s => {
+      if(!_bcTypes.includes(s.type)) return;
+      const key = `${b.idx}`;
+      if(!byIdx[key]) byIdx[key] = [];
+      const type = s.type.replace('is_','');
+      let prio = 6;
+      for(const [k,v] of Object.entries(_bcPriority)){ if(type.includes(k)){ prio=v; break; } }
+      byIdx[key].push({idx:b.idx, type, display:type, prio, color:_bcColorMap[type]||'#888'});
+    });
+  });
+  // 同一根K线多个BC标签 → 只显示优先级最高的1个；不同K线的标签全部显示（不限数量）
+  const merged = [];
+  Object.values(byIdx).forEach(arr => {
+    arr.sort((a,b)=>a.prio-b.prio);
+    merged.push(arr[0]);
+  });
+  merged.sort((a,b)=>a.prio-b.prio);
+  return merged;
+}
+
+function attachBcTimeRangeListener(chart){
+  if(!chart || window._bcListenerAttached) return;
+  try{
+    const ts = chart.timeScale();
+    if(ts && typeof ts.subscribeVisibleTimeRangeChange === 'function'){
+      ts.subscribeVisibleTimeRangeChange(() => { scheduleBcUpdate(); });
+    }
+    // 2026-08-09 BC 标签缩放跟随修复：barSpacing 缩放不会触发 subscribeVisibleTimeRangeChange
+    // 兜底：monkey-patch applyOptions 捕获 barSpacing/visibleLogicalRange/rightOffset 变化
+    if(ts && typeof ts.applyOptions === 'function'){
+      const _origApply = ts.applyOptions.bind(ts);
+      ts.applyOptions = function(opts){
+        const r = _origApply(opts);
+        if(opts && (opts.barSpacing !== undefined || opts.visibleLogicalRange !== undefined || opts.rightOffset !== undefined)){
+          scheduleBcUpdate();
+        }
+        return r;
+      };
+    }
+    window._bcListenerAttached = true;
+  }catch(e){}
+}
+
+let _bcUpdateTimer = null;
+function scheduleBcUpdate(){
+  if(_bcUpdateTimer) return;
+  _bcUpdateTimer = setTimeout(()=>{ _bcUpdateTimer=null;
+    try{ doBcUpdate(); }catch(e){}
+  }, 5);
+}
+function doBcUpdate(){
+  if(!window._lc) return;
+  const chart = window._lc.chart, candleSeries = window._lc.candleSeries;
+  if(_bcLabels.length) updateBcPositions(chart, candleSeries);
+  if(_smLabels.length) updateSmPositions(chart, candleSeries);
+  // 2026-08-29 修复: 买卖 B/S 标记拖拽/缩放时跟随 K 线
+  if(_tradeLabels.length) updateTradePositions(chart, candleSeries);
+}
+
+function updateBcPositions(chart, candleSeries){
+  for(const lbl of _bcLabels){
+    if(!lbl._time || lbl._price === undefined) continue;
+    const xPx = chart.timeScale().timeToCoordinate(lbl._time);
+    const yPx = candleSeries.priceToCoordinate(lbl._price);
+    if(xPx === null || yPx === null) continue;
+    const div = document.getElementById('bc-label-'+lbl.idx);
+    if(!div) continue;
+    const nl = Math.round(xPx) + 'px';
+    const nt = (lbl._up ? (Math.round(yPx) - 24) : (Math.round(yPx) + 12)) + 'px';
+    if(div.style.left !== nl) div.style.left = nl;
+    if(div.style.top !== nt) div.style.top = nt;
+  }
+}
+
+function renderBCLabels(bars, symbolData, period, chart, candleSeries){
+  const container = document.getElementById('chart');
+  if(!container) return;
+  // 2026-08-15 B1 修复：每次重绘先清掉旧的 bc-label DOM，防止换标的后残留
+  container.querySelectorAll('.bc-label').forEach(el=>el.remove());
+  // 首次订阅时间轴事件（鼠标拖拽/缩放重绘）
+  attachBcTimeRangeListener(chart);
+  const merged = buildBcLabels(symbolData);
+  _bcLabels = merged;
+  // 保存数据供 updateBcPositions 使用
+  const lc = window._lc;
+  if(lc){ lc.symbolData = symbolData; lc.bars = bars; lc.period = period; }
+  if(!merged.length){ return; }
+  const toTime = (dt, p) => {
+    return Math.floor(new Date(dt.replace(' ','T')).getTime()/1000);
+  };
+  const lookUpBars = bars;  // 2026-08-10 修复：用 chart 渲染的窗口 bars 而非 symbolData.bars 全集，确保 idx 时间对齐
+  if(_bcRaf) cancelAnimationFrame(_bcRaf);
+  _bcRaf = requestAnimationFrame(() => {
+    merged.forEach(lbl => {
+      // 本函数仅在复盘(isFinished)时被调用, 标签按实际数据全量显示, 不再遮挡末尾
+      const bar = lookUpBars.find(b=>b.idx===lbl.idx);
+      if(!bar) return;
+      const time = toTime(bar.datetime, period);
+      lbl._time = time;
+      const isUp = lbl.type.startsWith('SZ');
+      lbl._up = isUp;
+      const anchorPrice = isUp ? bar.high : bar.low;
+      lbl._price = anchorPrice;
+      const xPx = chart.timeScale().timeToCoordinate(time);
+      if(xPx === null) return;
+      const yPx = candleSeries.priceToCoordinate(anchorPrice);
+      if(yPx === null) return;
+      let div = document.getElementById('bc-label-'+lbl.idx);
+      if(!div){
+        div = document.createElement('div');
+        div.id = 'bc-label-'+lbl.idx;
+        div.className = 'bc-label';
+        const isDay = document.documentElement.classList.contains('light');
+        const c = isDay ? (lbl.color.replace('#FF0000','#CC0000').replace('#32CD32','#1a8c20').replace('#FFD700','#B8860B').replace('#FF69B4','#C71585').replace('#FFD93D','#DAA520')) : lbl.color;
+        div.style.cssText = 'position:absolute;z-index:9997;font-size:8px;padding:2px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;background:var(--bc-bg);border:1px solid '+c+';color:'+c+';font-weight:bold;transform:translate(-50%,0);';
+        div.textContent = lbl.display;
+        container.appendChild(div);
+      }
+      div.style.left = xPx + 'px';
+      // 上下各偏离一个字体高度（约8px），让标签更远离 K 线 hl
+      div.style.top = (isUp ? (yPx - 24) : (yPx + 12)) + 'px';
+    });
+  });
+}
+
+// summacd 标签 — 在笔端点显示 MACD 面积和
+let _smRaf = null;
+let _smLabels = [];
+function renderSummacdLabels(bars, symbolData, period, chart, candleSeries){
+  const container = document.getElementById('chart');
+  if(!container) return;
+  container.querySelectorAll('.sm-label').forEach(el=>el.remove());
+  _smLabels = [];
+  if(!symbolData || !symbolData.bars) return;
+  // 首次订阅时间轴事件(鼠标拖拽/缩放重绘) — 2026-08-27 修复拖拽不跟随
+  attachBcTimeRangeListener(chart);
+  const toTime = (dt, p) => Math.floor(new Date(dt.replace(' ','T')).getTime()/1000);
+  // 2026-08-29 修复: 颜色/位置按笔端点 G/D 决定（与笔同色）—— G 顶(向上笔结束)=绿+上方, D 底(向下笔结束)=红+下方
+  const gdMap = {};
+  if(symbolData.pens){
+    symbolData.pens.forEach(p => {
+      if(p.direction === 'up'){ gdMap[p.end_idx] = 'G'; gdMap[p.start_idx] = 'D'; }
+      else if(p.direction === 'down'){ gdMap[p.end_idx] = 'D'; gdMap[p.start_idx] = 'G'; }
+    });
+  }
+  if(_smRaf) cancelAnimationFrame(_smRaf);
+  _smRaf = requestAnimationFrame(() => {
+    symbolData.bars.forEach(bar => {
+      // 2026-08-29 修复: 只在笔端点 G/D 处显示 summacd 标签（端点 G=绿+上, D=红+下），非端点不显示
+      const gd = gdMap[bar.idx];
+      if(!gd) return;
+      // summacd 为 0 时也要显示（仅跳过空值）
+      if(bar.summacd === undefined || bar.summacd === null || bar.summacd === '') return;
+      const lookUpBar = bars.find(b=>b.idx===bar.idx);
+      if(!lookUpBar) return;
+      const time = toTime(lookUpBar.datetime, period);
+      const smVal = parseFloat(bar.summacd);
+      const isUp = gd === 'G';
+      const anchorPrice = isUp ? lookUpBar.high : lookUpBar.low;
+      const xPx = chart.timeScale().timeToCoordinate(time);
+      if(xPx === null) return;
+      const yPx = candleSeries.priceToCoordinate(anchorPrice);
+      if(yPx === null) return;
+      let div = document.getElementById('sm-label-'+bar.idx);
+      if(!div){
+        div = document.createElement('div');
+        div.id = 'sm-label-'+bar.idx;
+        div.className = 'sm-label';
+        // 颜色与笔一致 — G 顶=绿, D 底=红
+        const c = isUp ? '#00C853' : '#FF5252';
+        div.style.cssText = 'position:absolute;z-index:9996;font-size:7px;padding:1px 4px;border-radius:2px;white-space:nowrap;pointer-events:none;background:var(--bc-bg);border:1px solid '+c+';color:'+c+';font-weight:bold;transform:translate(-50%,0);';
+        div.textContent = (isNaN(smVal)?'0':smVal.toFixed(2));
+        container.appendChild(div);
+      }
+      // 记录标签引用, 供 updateSmPositions 拖拽/缩放跟随
+      _smLabels.push({ idx: bar.idx, _time: time, _price: anchorPrice, _up: isUp, _div: div });
+      div.style.left = xPx + 'px';
+      // 2026-08-29 靠近 K 线约半标签高(6px): G 顶=上偏移-42, D 底=下偏移+30，与 BC 标签上下错开（BC G:-24/D:+12）
+      div.style.top = (isUp ? (yPx - 42) : (yPx + 30)) + 'px';
+    });
+  });
+}
+
+// 2026-08-27 新增: summacd 标签拖拽/缩放跟随 K 线
+function updateSmPositions(chart, candleSeries){
+  for(const lbl of _smLabels){
+    if(!lbl._time || lbl._price === undefined) continue;
+    const xPx = chart.timeScale().timeToCoordinate(lbl._time);
+    const yPx = candleSeries.priceToCoordinate(lbl._price);
+    if(xPx === null || yPx === null) continue;
+    const div = lbl._div;
+    if(!div) continue;
+    const nl = Math.round(xPx) + 'px';
+    const nt = (lbl._up ? (Math.round(yPx) - 42) : (Math.round(yPx) + 30)) + 'px';
+    if(div.style.left !== nl) div.style.left = nl;
+    if(div.style.top !== nt) div.style.top = nt;
+  }
+}
+
+// 买卖标记 (顶底分型已移除 #7)
+function renderTradeMarkers(bars, trades, period, isFinished){
+  const container = document.getElementById('chart');
+  if(!container) return;
+  const lc = window._lc; if(!lc) return;
+  const chart = lc.chart; const candleSeries = lc.candleSeries;
+  container.querySelectorAll('.sig-marker').forEach(el=>el.remove());
+  _tradeLabels = [];
+  // 2026-08-29 修复: 模拟中也要挂时间轴监听, 拖拽/缩放时 B/S 标记跟随 K 线
+  attachBcTimeRangeListener(chart);
+  const toTime = (dt, p) => {
+    return Math.floor(new Date(dt.replace(' ','T')).getTime()/1000);
+  };
+  const BARS_LEN = bars.length;
+  if(!trades) return;
+  // 2026-08-29 坐标取用延迟到 rAF 一帧后(P1), 规避复盘首帧布局未就绪 timeToCoordinate 返回 null 导致标记全丢
+  if(_tradeRaf) cancelAnimationFrame(_tradeRaf);
+  _tradeRaf = requestAnimationFrame(() => {
+    trades.forEach(trade => {
+      // 2026-08-29 P0修复: trade.idx/bar.idx 都是全量下标, 不能用窗口长度 BARS_LEN-10 判断;
+      // 改为按数组位置过滤, 且末尾隐藏标记仅用于模拟中(遮罩未播放区), 复盘(isFinished)不过滤
+      const pos = bars.findIndex(b=>b.idx===trade.idx);
+      if(pos < 0) return;
+      if(isFinished === false && pos >= BARS_LEN - 10) return;
+      const bar = bars[pos];
+      const time = toTime(bar.datetime, period);
+      const xPx = chart.timeScale().timeToCoordinate(time);
+      if(xPx === null) return;
+      const isBuy = trade.type === 'buy';
+      const c = isBuy ? '#2ecc71' : '#ff6b6b';
+      const txt = isBuy ? 'B↑' : 'S↓';
+      // 2026-08-29 定位: B(买)在K线 low 下方, S(卖)在K线 high 上方; 字号改8px与BC标签一致
+      const above = !isBuy;
+      const anchorPrice = isBuy ? bar.low : bar.high;
+      const yPx = candleSeries.priceToCoordinate(anchorPrice);
+      if(yPx === null) return;
+      const div = document.createElement('div');
+      div.className = 'sig-marker';
+      div.style.cssText = 'position:absolute;z-index:9996;font-size:8px;font-weight:bold;color:'+c+';pointer-events:none;transform:translate(-50%,'+(above?'-100%':'0')+');'+(above?'top:'+(yPx-14)+'px;':'top:'+(yPx+6)+'px;')+'left:'+xPx+'px;';
+      div.textContent = txt;
+      container.appendChild(div);
+      // 记录引用供 updateTradePositions 拖拽/缩放跟随 (锚点价格/方向与上方 yPx 一致)
+      _tradeLabels.push({ _time: time, _price: anchorPrice, _up: above, _div: div });
+    });
+  });
+}
+
+// 2026-08-29 新增: B/S 买卖标记拖拽/缩放跟随 K 线, 定位固定
+function updateTradePositions(chart, candleSeries){
+  for(const lbl of _tradeLabels){
+    if(!lbl._time || lbl._price === undefined) continue;
+    const xPx = chart.timeScale().timeToCoordinate(lbl._time);
+    const yPx = candleSeries.priceToCoordinate(lbl._price);
+    if(xPx === null || yPx === null) continue;
+    const div = lbl._div;
+    if(!div) continue;
+    const nl = Math.round(xPx) + 'px';
+    const nt = (lbl._up ? (Math.round(yPx) - 14) : (Math.round(yPx) + 6)) + 'px';
+    if(div.style.left !== nl) div.style.left = nl;
+    if(div.style.top !== nt) div.style.top = nt;
+  }
+}
+
+function calcMACD(closes, fast=12, slow=26, sig=9){
+  const dif=[], dea=[], hist=[];
+  let ema12=closes[0], ema26=closes[0], emaSig=0;
+  for(let i=0;i<closes.length;i++){
+    ema12 = i===0 ? closes[i] : ema12 + 2/(fast+1)*(closes[i]-ema12);
+    ema26 = i===0 ? closes[i] : ema26 + 2/(slow+1)*(closes[i]-ema26);
+    dif[i] = ema12 - ema26;
+    emaSig = i===0 ? dif[i] : emaSig + 2/(sig+1)*(dif[i]-emaSig);
+    dea[i] = emaSig;
+    hist[i] = (dif[i] - emaSig) * 2;
+  }
+  return {dif, dea, hist};
+}
+
+function renderState(s){
+  window._renderState = s;
+  $('vTotalAsset').textContent = fmtMoney(s.total_asset);
+  $('vCash').textContent = fmtMoney(s.cash);
+  $('vPos').textContent = s.position + ' ' + t('shares','股');
+  $('vAvgCost').textContent = s.position ? s.avg_cost : '-';
+  $('vProgress').textContent = s.cur_pos + '/' + s.total_bars;
+  $('progFill').style.width = (s.cur_pos / s.total_bars * 100) + '%';
+  const curBar = s.cur_bar || (s.window && s.window[s.cur_pos]) || (s.all_bars && s.all_bars[s.cur_pos]) || {datetime:'-',close:0};
+  $('curBarInfo').textContent = curBar.datetime + '  ' + t('close_price','收盘') + ' ' + curBar.close;
+  const prof = (s.float_profit !== undefined) ? s.float_profit : (curBar.close - s.avg_cost) * s.position;
+  const pEl = $('vProfit');
+  pEl.textContent = s.position ? fmtMoney(prof)+' ('+fmtPct(s.avg_cost? (curBar.close-s.avg_cost)/s.avg_cost*100:0)+')' : '-';
+  pEl.className = 'value ' + profitClass(prof);
+  const cpEl = $('vCloseProfit');
+  const cp = s.close_profit !== undefined ? s.close_profit : 0;
+  cpEl.textContent = fmtMoney(cp);
+  cpEl.className = 'value ' + profitClass(cp);
+  $('statusBar').textContent = s.status === 'FINISHED' ? '✅ '+t('result_complete','模拟完成') : t('msg_simulating','模拟中...');
+  const hint = $('tradeHint');
+  hint.innerHTML = '';
+  const totalBars = s.total_bars;
+  const histN = s.hist_n;
+  // 用引擎窗口数据绘图（不是全量数据），确保 cur_pos 与图表索引对齐
+  const fullBars = (s.all_bars && s.all_bars.length) ? s.all_bars : ((symbolData && symbolData.bars) ? symbolData.bars : (s.window || []));
+  const showTo = s.status === 'FINISHED' ? s.total_bars - 1 : Math.max(s.cur_pos, s.hist_n - 1);
+  drawChart({bars: fullBars, trades: s.trades, hist_idx: showTo, is_finished: s.status === 'FINISHED'});
+  renderTrades(s.trades);
+  if(s.status === 'FINISHED' && $('resultPanel').classList.contains('hidden') && !_showingReplay){
+    lastFinishedState = s;
+    showResult();
+  }
+}
+
+function renderTrades(trades){
+  const tb = $('tradeBody');
+  tb.innerHTML = '';
+  trades.slice().reverse().forEach(trade=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+trade.datetime+'</td>'+
+      '<td>'+(trade.type==='buy'?'<span style="color:#ff6b6b">'+t('buy','买入')+'</span>':'<span style="color:#2ecc71">'+t('sell','卖出')+'</span>')+'</td>'+
+      '<td>'+trade.price+'</td><td>'+trade.qty+'</td><td>'+fmtMoney(trade.amount)+'</td><td>'+trade.fee+'</td>'+
+      '<td>'+ (trade.profit!==undefined ? '<span class="'+profitClass(trade.profit)+'">'+fmtMoney(trade.profit)+'</span>' : '-') +'</td>';
+    tb.appendChild(tr);
+  });
+}
+
+async function showResult(){
+  const r = await api('/api/session/'+sessionId+'/result');
+  const items = [
+    [t('result_init_asset','初始资产'), fmtMoney(r.init_asset)],
+    [t('result_final_asset','最终资产'), fmtMoney(r.final_asset)],
+    [t('result_total_profit','总盈亏'), fmtMoney(r.total_profit), profitClass(r.total_profit)],
+    [t('result_profit_rate','盈亏率'), fmtPct(r.profit_rate), profitClass(r.profit_rate)],
+    [t('result_trade_count','交易次数'), r.trade_count+' '+t('lb_trades','次')],
+    [t('result_sell_count','卖出次数'), r.sell_count+' '+t('lb_trades','次')],
+    [t('result_win_count','盈利次数'), r.win_count+' '+t('lb_trades','次')],
+    [t('result_max_win','最大单笔盈利'), fmtMoney(r.max_win)],
+    [t('result_max_loss','最大单笔亏损'), fmtMoney(r.max_loss)],
+    [t('result_remain_pos','剩余持仓'), r.remain_position+' '+t('shares','股')],
+    [t('result_end_date','结束日期'), r.end_date],
+    [t('col_status','状态'), t('result_complete','完成')],
+  ];
+  $('resultGrid').innerHTML = items.map(it=>
+    '<div class="result-item"><div class="label">'+it[0]+'</div><div class="value '+(it[2]||'')+'">'+it[1]+'</div></div>'
+  ).join('');
+  $('resultPanel').classList.remove('hidden');
+  $('setupPanel').classList.add('hidden');
+  $('playPanel').classList.add('hidden');
+  $('statusBar').textContent = '🏆 模拟完成';
+  stopAuto();
+  // 自动保存成绩（用默认昵称）
+  const nick = localStorage.getItem('chan_nickname') || t('guest','游客');
+  $('inpNickname').value = nick;
+  try{
+    const r = await api('/api/session/save_result', {session_id: sessionId, nickname: nick});
+    if(r.user_id) localStorage.setItem('chan_user_id', r.user_id);
+    toast(t('auto_saved','✅ 成绩已自动保存'));
+    await loadBoard();
+  }catch(e){ console.error('auto-save failed', e); }
+}
+
+let boardPage = 0;
+let modalBoardPage = 0;
+let boardType = 'rate';
+let modalBoardType = 'rate';
+const BOARD_PAGE_SIZE = 10;
+// 周期名映射（i18n 化）
+const PERIOD_KEY = {'':'','30min':'period_30min','day':'period_day','30s':'period_30s','3m':'period_3m','1min':'period_1min','5min':'period_5min','daily':'period_day','30m':'period_30min','auto':'period_unknown','全部':'period_all','?':'period_unknown'};
+function periodName(p){ if(!p||p==='-'||p==='auto'||p==='?') return t('period_all','全部'); return t(PERIOD_KEY[p]||'period_unknown', p); }
+
+const PERIOD_NAMES_DEPRECATED = {};
+
+function setBoardType(t){ boardType=t; boardPage=0; loadBoard(); updateTabHighlight('boardTabRow'); }
+function setModalBoardType(t){ modalBoardType=t; modalBoardPage=0; loadBoardModal(); updateTabHighlight('modalBoardTabRow'); }
+function updateTabHighlight(containerId){
+  const row = $(containerId); if(!row) return;
+  row.querySelectorAll('.lb-tab').forEach(b=>{
+    if(b.dataset.type === (containerId==='boardTabRow'?boardType:modalBoardType)){
+      b.classList.remove('btn-gray');
+    } else {
+      b.classList.add('btn-gray');
+    }
+  });
+}
+window.setBoardType = setBoardType;
+window.setModalBoardType = setModalBoardType;
+
+async function loadBoard(){
+  try{
+    const url = '/api/leaderboard?limit='+BOARD_PAGE_SIZE+'&offset='+(boardPage*BOARD_PAGE_SIZE)+'&rank_type='+boardType;
+    const r = await api(url);
+    $('rankCount').textContent = t('lb_total','共 {count} 条记录').replace('{count}', r.total);
+    const pages = Math.max(1, Math.ceil(r.total/BOARD_PAGE_SIZE));
+    $('boardPage').textContent = (boardPage+1)+'/'+pages;
+    $('btnBoardPrev').disabled = boardPage<=0;
+    $('btnBoardNext').disabled = boardPage>=pages-1;
+    renderBoardRows(r, 'boardBody', boardPage);
+  }catch(e){}
+}
+
+function renderBoardRows(r, targetId, pg){
+  const tb = $(targetId);
+  tb.innerHTML = '';
+  r.board.forEach((row,i)=>{
+    const tr = document.createElement('tr');
+    const rank = pg*BOARD_PAGE_SIZE + i + 1;
+    const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+    const pname = periodName(row.period||'');
+    const code = row.code || '';
+    const symLbl = code ? (t('symbol','标的')+symbolIdx(code)) : '';
+    tr.innerHTML = '<td>'+medal+'</td>'+
+      '<td><a href="javascript:void(0)" onclick="showUser(\''+row.nickname.replace(/'/g,"\\'")+'\')" style="color:#4ecdc4">'+row.nickname+'</a></td>'+
+      '<td>'+symLbl+'</td>'+
+      '<td>'+(row.period==='-'?'<span style="color:var(--muted2)">'+t('lb_default','默认')+'</span>':'<span class="period-badge">'+pname+'</span>')+'</td>'+
+      '<td class="'+profitClass(row.profit_rate)+'">'+fmtPct(row.profit_rate)+'</td>'+
+      '<td class="'+profitClass(row.profit)+'">'+fmtMoney(row.profit)+'</td>'+
+      '<td>'+row.trade_count+'</td>'+
+      '<td>'+(row.win_rate !== undefined ? row.win_rate : ((row.trade_count && row.win_count!==undefined)?Math.round(row.win_count/row.trade_count*100):0))+'%</td>'+
+      '<td style="color:#888;font-size:11px">'+String(row.finished_at||'').slice(0,10)+'</td>';
+    tb.appendChild(tr);
+  });
+  if(!r.board.length){
+    tb.innerHTML = '<tr><td colspan="9" style="color:#888;text-align:center;padding:16px">暂无记录</td></tr>';
+  }
+}
+
+function showBoardModal(){
+  $('btnModalBoardPrev').onclick = ()=>{ modalBoardPage=Math.max(0,modalBoardPage-1); loadBoardModal(); };
+  $('btnModalBoardNext').onclick = ()=>{ modalBoardPage++; loadBoardModal(); };
+}
+
+async function loadBoardModal(){
+  try{
+    const url = '/api/leaderboard?limit='+BOARD_PAGE_SIZE+'&offset='+(modalBoardPage*BOARD_PAGE_SIZE)+'&rank_type='+modalBoardType;
+    const r = await api(url);
+    $('modalRankCount').textContent = t('lb_total','共 {count} 条记录').replace('{count}', r.total);
+    const pages = Math.max(1, Math.ceil(r.total/BOARD_PAGE_SIZE));
+    $('modalBoardPage').textContent = (modalBoardPage+1)+'/'+pages;
+    $('btnModalBoardPrev').disabled = modalBoardPage<=0;
+    $('btnModalBoardNext').disabled = modalBoardPage>=pages-1;
+    renderBoardRows(r, 'modalBoardBody', modalBoardPage);
+  }catch(e){}
+}
+
+async function showUser(nickname){
+  try{
+    const r = await api('/api/user/'+encodeURIComponent(nickname));
+    $('userModalTitle').textContent = '👤 '+nickname+' '+t('lb_user_sessions','的战绩');
+    const s = r.stats;
+    $('userModalStats').innerHTML = t('lb_user_total','累计 {n} 次').replace('{n}','<b style="color:#4ecdc4">'+s.total_sessions+'</b>')+' · '+t('lb_user_sum','总盈亏')+' <b class="'+profitClass(s.sum_profit)+'">'+fmtMoney(s.sum_profit)+'</b> · '+t('lb_user_avg','平均')+' <b class="'+profitClass(s.avg_rate)+'">'+fmtPct(s.avg_rate)+'</b> · '+t('lb_win_rate','胜率')+' <b>'+s.win_rate+'%</b>';
+    const tb = $('userModalBody');
+    tb.innerHTML = '';
+    (r.sessions||[]).forEach(row=>{
+      const tr = document.createElement('tr');
+      const pname = periodName(row.period||'');
+      const code = row.code || '';
+      const symLbl = code ? (t('symbol','标的')+symbolIdx(code)) : '';
+      tr.innerHTML = '<td style="color:#888;font-size:11px">'+String(row.created_at||'').slice(0,16).replace('T',' ')+'</td>'+
+        '<td>'+symLbl+'</td>'+
+        '<td>'+(row.period==='-'?'<span style="color:var(--muted2)">'+t('lb_default','默认')+'</span>':pname)+'</td>'+
+        '<td class="'+profitClass(row.profit_rate)+'">'+fmtPct(row.profit_rate)+'</td>'+
+        '<td class="'+profitClass(row.profit)+'">'+fmtMoney(row.profit)+'</td>'+
+        '<td>'+row.trade_count+'</td>'+
+        '<td>'+row.win_rate+'%</td>';
+      tb.appendChild(tr);
+    });
+    $('userModal').classList.remove('hidden');
+  }catch(e){ toast('❌ '+e.message); }
+}
+
+// 周期筛选 (#4)
+function filterByPeriod(period){
+  activePeriodFilter = (activePeriodFilter === period) ? '' : period;
+  updateSymbolDropdown();
+  updatePeriodButtonStyles();
+}
+function updateSymbolDropdown(){
+  const syms = JSON.parse(sessionStorage.getItem('chan_symbols')||'[]');
+  if(!syms) return;
+  let filtered = syms;
+  if(activePeriodFilter){
+    filtered = syms.filter(s => (s.period || '') === activePeriodFilter);
+    if(!filtered.length){ toast(t('no_period_data','无 {p} 数据').replace('{p}', t(periodKey[activePeriodFilter]||'period_unknown',activePeriodFilter))); activePeriodFilter=''; updatePeriodButtonStyles(); return; }
+  }
+  const sel = $('selSymbol');
+  const currentVal = sel.value;
+  sel.innerHTML = filtered.map(s => {
+    const p = s.period || 'auto';
+    const key = s.code + ':' + (s.period || '');
+    const codes = _uniqueSymbols.map(x=>x.code).filter((c,i)=>_uniqueSymbols.findIndex(z=>z.code===c)===i);
+    const idx = codes.findIndex(x => x === s.code) + 1;
+    return '<option value="'+key+'">'+t('symbol','标的')+idx+' · '+t(periodKey[p]||'period_unknown',p)+' ('+s.bars+t('bars_unit','根')+')'+'</option>';
+  }).join('');
+  if(!filtered[0]) { el.textContent = t('symbol_count','共 {count} 个标的').replace('{count}', syms.length); return; }
+  sel.value = filtered[0].code + ':' + (filtered[0].period || '');
+  const selVal = sel.value;
+  const selCode = selVal ? selVal.split(':')[0] : '';
+  const selPeriod = selVal ? selVal.split(':')[1] : '';
+  $('symbolInfo').textContent = activePeriodFilter
+    ? getSymbolLabel(selCode, selPeriod)+' · '+t(periodKey[activePeriodFilter]||'period_unknown',activePeriodFilter)
+    : getSymbolLabel(selCode, selPeriod);
+}
+function updatePeriodButtonStyles(){
+  document.querySelectorAll('.period-filter-btn').forEach(btn => {
+    if(btn.dataset.period === activePeriodFilter) btn.classList.add('active-period');
+    else btn.classList.remove('active-period');
+  });
+}
+
+const periodNames_DEPRECATED = {};
+const periodKey = {'30min':'period_30min','day':'period_day','30s':'period_30s','3m':'period_3m','1min':'period_1min','5min':'period_5min','daily':'period_day','30m':'period_30min','unknown':'period_unknown'};
+const periodColors = {'30min':'#ff9f43','day':'#4ecdc4','30s':'#a29bfe','3m':'#fd79a8','1min':'#636e72','5min':'#00b894','daily':'#4ecdc4','30m':'#ff9f43','unknown':'#888'};
+
+let _symsData = null;
+const _uniqueSymbols = [];  // 每个 (code,period) 条目对应一个序号
+
+function rebuildSymbolOptions(){
+  if(!_symsData) return;
+  const sel = $('selSymbol');
+  if(!sel) return;
+  // 平铺格式: 每个 (code, period) 一条, value = "code:period"
+  _uniqueSymbols.length = 0;
+  _symsData.symbols.forEach(s => _uniqueSymbols.push(s));
+  let html = _uniqueSymbols.map((s) => {
+    const p = s.period || 'auto';
+    const codes = _uniqueSymbols.map(x=>x.code).filter((c,i)=>_uniqueSymbols.findIndex(z=>z.code===c)===i);
+    const idx = codes.findIndex(x => x === s.code) + 1;
+    return '<option value="'+s.code+':'+(s.period||'')+'">'+t('symbol','标的')+idx+' · '+t(periodKey[p]||'period_unknown',p)+' ('+s.bars+t('bars_unit','根')+')'+'</option>';
+  }).join('');
+  sel.innerHTML = html;
+  // 追加 CSV 历史 optgroup
+  appendCsvHistoryOptions();
+}
+
+function rebuildSymbolInfo(){
+  const el = $('symbolInfo');
+  if(!el) return;
+  if(_symsData && _symsData.symbols){
+    el.textContent = t('symbol_count','共 {count} 个标的').replace('{count}', _symsData.symbols.length);
+  }
+  // 更新 userInfo：已保存昵称如果是默认 '游客' 也翻译
+  const ui = $('userInfo');
+  if(!ui) return;
+  const savedNick = localStorage.getItem('chan_nickname');
+  if(savedNick && savedNick === '游客'){
+    ui.textContent = '👤 '+t('guest','游客');
+  }else if(!savedNick){
+    ui.textContent = '👤 '+t('guest','游客');
+  }
+}
+
+async function init(){
+  const syms = await api('/api/symbols');
+  _symsData = syms;
+  rebuildSymbolOptions();
+  updatePeriodButtonStyles();
+  $('symbolInfo').textContent = t('symbol_count','共 {count} 个标的').replace('{count}', syms.symbols.length);
+  sessionStorage.setItem('chan_symbols', JSON.stringify(syms.symbols));
+
+  $('btnStart').onclick = start;
+  $('btnBuy1').onclick = ()=>trade('buy',1);
+  $('btnBuyHalf').onclick = ()=>trade('buy',0.5);
+  $('btnSell1').onclick = ()=>trade('sell',1);
+  $('btnSellHalf').onclick = ()=>trade('sell',0.5);
+  $('btnBuyQty').onclick = ()=>trade('buy',0, Number($('inpQty').value)||0);
+  $('btnSellQty').onclick = ()=>trade('sell',0, Number($('inpQty').value)||0);
+  $('btnAdvance').onclick = ()=>advance(1);
+  $('btnAdvance5').onclick = ()=>advance(5);
+  $('btnAuto').onclick = toggleAuto;
+  $('btnUpdateNick').onclick = updateNickname;
+  $('btnBackToSim').onclick = ()=>{ if(lastFinishedState){ _showingReplay=true; $('resultPanel').classList.add('hidden'); $('playPanel').classList.remove('hidden'); renderState(lastFinishedState); _showingReplay=false; } };
+  $('btnAgain').onclick = ()=>{ sessionId=null; destroyChart(); stopAuto(); $('resultPanel').classList.add('hidden'); $('playPanel').classList.remove('hidden'); start(); };
+  $('btnNewSetup').onclick = ()=>{ sessionId=null; destroyChart(); $('resultPanel').classList.add('hidden'); $('setupPanel').classList.remove('hidden'); stopAuto(); };
+  $('btnExit').onclick = ()=>{ sessionId=null; destroyChart(); $('playPanel').classList.add('hidden'); $('setupPanel').classList.remove('hidden'); stopAuto(); };
+  $('btnBoardTop').onclick = ()=>{ showBoardModal(); $('boardModal').classList.remove('hidden'); loadBoardModal(); };
+
+
+  $('btnBoardPrev').onclick = ()=>{ boardPage=Math.max(0,boardPage-1); loadBoard(); };
+  $('btnBoardNext').onclick = ()=>{ boardPage++; loadBoard(); };
+  loadBoard();
+
+  const savedNick = localStorage.getItem('chan_nickname');
+  if(savedNick && savedNick !== '游客'){ 
+    $('userInfo').textContent = '👤 '+savedNick; 
+    $('inpNickname').value = savedNick; 
+  }else{
+    $('userInfo').textContent = '👤 '+t('guest','游客');
+  }
+  // 点击userInfo弹出改昵称prompt
+  $('userInfo').title = t('btn_click_nickname','点击可修改');
+  $('userInfo').style.cursor = 'pointer';
+  $('userInfo').onclick = clickUpdateNick;
+
+  // === CSV 会话自动恢复（Bug #2 修复）===
+  try{
+    const csvSess = localStorage.getItem('chan_csvSession');
+    if(csvSess){
+      const r = await api('/api/session/'+csvSess);
+      if(r && (r._symbolData || r.session_id)){
+        sessionId = csvSess;
+        curCode = r.code || 'CSV';
+        curPeriod = r.period || '30min';
+        symbolData = r._symbolData || r;
+        if($('legend')) $('legend').innerHTML =
+          '<span style="background:#4ecdc4;color:#111">CSV · '+t('period_30min','30分钟')+'</span>' +
+          '<span style="background:#ff6b6b;color:#fff">'+(r._symbolData ? '✅ '+t('csv_with_chan','含缠论绘图') : t('csv_ohlc_only','纯OHLC'))+'</span>' +
+          '<span>🟢'+t('chart_bullish_candle','涨K')+'&nbsp;🔴'+t('chart_bearish_candle','跌K')+'</span>';
+        $('setupPanel').classList.add('hidden');
+        $('resultPanel').classList.add('hidden');
+        $('playPanel').classList.remove('hidden');
+        toast(t('csv_session_restored','📂 CSV 会话已自动恢复'));
+        await new Promise(res=>setTimeout(res,300));
+        renderState(r);
+        return; // 已恢复，跳过后续默认 setup 显示
+      }
+    }
+  }catch(e){
+    localStorage.removeItem('chan_csvSession');
+  }
+}
+
+async function clickUpdateNick(){
+  const uid = localStorage.getItem('chan_user_id');
+  if(!uid){ toast(t('no_user','请先完成一次模拟')); return; }
+  const cur = localStorage.getItem('chan_nickname') || t('guest','游客');
+  const newNick = prompt(t('lbl_current_nickname','输入新昵称（当前: ')+cur+'）');
+  if(!newNick || newNick === cur) return;
+  try{
+    const r = await api('/api/user/update_nickname', {user_id: uid, nickname: newNick}, {method:'PUT'});
+    localStorage.setItem('chan_nickname', r.nickname);
+    localStorage.setItem('chan_user_id', r.user_id);
+    $('userInfo').textContent = '👤 '+r.nickname;
+    if($('inpNickname')) $('inpNickname').value = r.nickname;
+    toast(t('nick_updated','✅ 昵称已更新: '+r.nickname));
+    await loadBoard();
+  }catch(e){ toast('❌ '+(e.message||e)); }
+}
+
+function destroyChart(){
+  if(window._lc && window._lc.chart){ try{window._lc.chart.remove()}catch(e){} window._lc = null; }
+  // 2026-08-09 修复：重建 chart 时重置 BC 订阅 flag，确保下次 drawChart 重新挂事件监听
+  window._bcListenerAttached = false;
+  _bcLabels = [];
+  // 2026-08-15 B2 修复：退出时清 bc-label DOM，防止残留
+  const chartEl = document.getElementById('chart');
+  if(chartEl){ chartEl.querySelectorAll('.bc-label').forEach(el=>el.remove()); }
+}
+
+async function updateNickname(){
+  const nick = $('inpNickname').value.trim();
+  if(!nick){ toast(t('input_nickname','请输入昵称')); return; }
+  const uid = localStorage.getItem('chan_user_id');
+  if(!uid){ toast(t('no_user','请先完成一次模拟')); return; }
+  try{
+    const r = await api('/api/user/update_nickname', {user_id: uid, nickname: nick}, {method:'PUT'});
+    localStorage.setItem('chan_nickname', r.nickname);
+    localStorage.setItem('chan_user_id', r.user_id);
+    $('userInfo').textContent = '👤 '+r.nickname;
+    toast(t('nick_updated','✅ 昵称已更新: '+r.nickname));
+    $('inpNickname').value = r.nickname;
+  }catch(e){ toast('❌ '+(e.message||e)); }
+}
+
+async function start(){
+  const selVal = $('selSymbol').value;  // "code:period" 或 "__csv__<id>"
+  // CSV 历史条目（B2 方案）
+  if(selVal && selVal.startsWith('__csv__')){
+    const id = parseInt(selVal.slice(7), 10);
+    await playCsvEntry(id);
+    return;
+  }
+  const [code, period] = selVal ? selVal.split(':') : ['', '30min'];
+  const body = {
+    code: code,
+    period: period || '30min',
+    init_asset: Number($('inpAsset').value)||1000000,
+    fees_on: false,
+    tplus1: $('chkTplus1').checked,
+    window_size: Number($('selWindow').value),
+  };
+  try{
+    destroyChart();
+    sessionId = null;
+
+    const s = await api('/api/session/start', body);
+    sessionId = s.session_id;
+    curCode = body.code;
+    curPeriod = body.period;
+    const d = await api('/api/data/'+curCode+(body.period?'?period='+body.period:''));
+    symbolData = d;
+
+    const periodKey = {'30min':'period_30min','day':'period_day','30s':'period_30s','3m':'period_3m','1min':'period_1min','5min':'period_5min','daily':'period_day','30m':'period_30min','unknown':'period_unknown'};
+    const pdName = t(periodKey[body.period]||'period_unknown', body.period||'30min');
+    const tMode = s.tplus1 ? t('msg_tplus1','T+1限制') : t('msg_t0','T+0开放');
+    const tradeMsg = s.tradeable ? t('msg_tradeable','可交易')+' · '+tMode : t('msg_non_tradeable','仅供查看（不可交易）');
+    $('legend').innerHTML =
+      '<span style="background:#4ecdc4;color:#111">'+getSymbolLabel(curCode, curPeriod)+' · '+pdName+'</span>' +
+      '<span style="background:'+(s.tradeable?'#2ecc71':'#ff6b6b')+';color:#fff">'+tradeMsg+'</span>' +
+      '<span>🟢'+t('chart_bullish_candle','涨K')+'&nbsp;🔴'+t('chart_bearish_candle','跌K')+'</span>' +
+      '<span style="color:#00C853">'+t('chart_up_stroke','向上笔')+'</span>' +
+      '<span style="color:#FF5252">'+t('chart_down_stroke','向下笔')+'</span>' +
+      '<span style="color:#2196F3">'+t('chart_segment','线段')+'</span>' +
+      '<span style="color:#9b59b6">'+t('chart_pivot','中枢')+'</span>' +
+      '<span>'+t('chart_stroke_divergence','笔背驰')+'</span><span>'+t('chart_5stroke_divergence','5笔背驰')+'</span><span>'+t('chart_7stroke_divergence','7笔背驰')+'</span><span>'+t('chart_pivot_divergence','中枢盘整背驰')+'</span><span>'+t('chart_trend_divergence','趋势背驰')+'</span>' +
+      '<span style="color:var(--muted)">📌 TradingView · '+t('chart_area','图表')+'</span>';
+    $('setupPanel').classList.add('hidden');
+    $('resultPanel').classList.add('hidden');
+    $('playPanel').classList.remove('hidden');
+    renderState(s);
+
+    // 随机起点 (#10)
+    const totalBars = s.total_bars;
+    const histN = s.hist_n;
+    if(totalBars > histN + 10){
+      const maxRandom = totalBars - histN - 10;
+      const randomStart = Math.floor(Math.random() * maxRandom);
+      if(randomStart > 0){
+        advance(randomStart).then(()=>{
+          toast('🎲 '+t('random_start','随机起点: 第 {n} 根').replace('{n}', histN+randomStart));
+        }).catch(()=>{});
+      }
+    }
+  }catch(e){ toast('❌ '+e.message); }
+}
+
+async function trade(kind, ratio, qty){
+  if(!sessionId) return toast(t('please_start','请先开始模拟'));
+  // 按数量交易时 qty=0 无效
+  if(ratio === 0 && qty === 0) return toast(t('enter_valid_qty','请输入有效数量'));
+  try{
+    const r = await api('/api/session/'+kind, {session_id: sessionId, ratio, qty});
+    if(!r.ok) return toast('⚠️ '+r.msg);
+    toast('✅ '+r.msg);
+    renderState(r.state);
+  }catch(e){ toast('❌ '+e.message); }
+}
+
+async function advance(n){
+  if(!sessionId) return toast(t('please_start','请先开始模拟'));
+  try{
+    const s = await api('/api/session/advance', {session_id: sessionId, n});
+    renderState(s);
+  }catch(e){ toast('❌ '+e.message); }
+}
+
+function toggleAuto(){
+  if(autoTimer){ stopAuto(); return; }
+  const btn = $('btnAuto');
+  btn.textContent = '⏸ '+t('pause','暂停');
+  btn.classList.remove('btn-gray'); btn.style.background='#e67e22';
+  const interval = parseInt($('selAutoInt').value, 10) || 5000;
+  autoTimer = setInterval(()=>advance(1), interval);
+}
+function stopAuto(){
+  if(autoTimer){ clearInterval(autoTimer); autoTimer=null; }
+  const btn = $('btnAuto');
+  btn.textContent = '▶ '+t('auto_play','自动播放');
+  btn.style.background='';
+}
+
+window._theme = 'dark';
+function toggleTheme(){
+  const isLight = window._theme === 'dark';
+  window._theme = isLight ? 'light' : 'dark';
+  document.documentElement.classList.toggle('light', isLight);
+  const btn = $('btnTheme');
+  if(btn) btn.textContent = isLight ? '☀' : '🌙';
+  applyChartTheme();
+}
+function applyChartTheme(){
+  if(!window._lc || !window._lc.chart) return;
+  const lc = window._lc;
+  const isLight = window._theme === 'light';
+  const bg = isLight ? '#ffffff' : '#1a1a2e';
+  const fg = isLight ? '#1a1a1a' : '#888';
+  const grid = isLight ? '#e8e8e8' : '#2a2a4a';
+  const border = isLight ? '#ddd' : '#333';
+  // ⚠️ 只改颜色，不动 barSpacing / rightPadding / rightOffset ——
+  // fitContent 算出的 barSpacing 是正确缩放值，硬编码 0.6 会让 chart 塌缩
+  lc.chart.applyOptions({
+    layout:{background:{color:bg},textColor:fg},
+    grid:{vertLines:{color:grid},horzLines:{color:grid}},
+    timeScale:{borderColor:border},
+    rightPriceScale:{borderColor:border},
+  });
+  // 2026-08-14 修复：MACD pane 也要更新背景色和文字色
+  const panes = lc.chart.panes();
+  for(let i=0;i<panes.length;i++){
+    panes[i].applyOptions({
+      layout:{background:{color:bg},textColor:fg},
+      grid:{vertLines:{color:grid},horzLines:{color:grid}},
+    });
+  }
+}
+(function(){ try{const b=$('btnTheme');if(b)b.onclick=toggleTheme}catch(e){}})();
+
+// ==================== i18n 中英切换 ====================
+window._langDict = {};
+window._curLang = 'zh-CN';  // i18n 语言键，对应 static/lang/{key}.json
+window._chartLocale = 'zh-CN';  // TradingView chart 的 locale
+function t(key, fallback){
+  const d = window._langDict;
+  return d && d[key] ? d[key] : (fallback || key);
+}
+async function loadLang(lang){
+  try{
+    const r = await fetch('static/lang/'+lang+'.json?v='+Date.now());
+    window._langDict = await r.json();
+    return true;
+  }catch(e){ return false; }
+}
+function applyLang(){
+  const d = window._langDict;
+  if(!d) return;
+  // 更新 data-i18n 元素
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(d[key]) el.textContent = d[key];
+  });
+  // 更新 placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-placeholder');
+    if(d[key]) el.placeholder = d[key];
+  });
+  // 更新 title
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-title');
+    if(d[key]) el.title = d[key];
+  });
+  // 更新语言按钮图标
+  const langBtn = $('btnLang');
+  if(langBtn) langBtn.textContent = window._curLang === 'zh-CN' ? '🇨🇳' : '🇬🇧';
+  refreshFileNames();
+}
+async function switchLang(){
+  window._curLang = window._curLang === 'zh-CN' ? 'en' : 'zh-CN';
+  window._chartLocale = window._curLang === 'zh-CN' ? 'zh-CN' : 'en-US';
+  await loadLang(window._curLang);
+  applyLang();
+  // CSV 历史区 "暂无CSV导入记录" / "No CSVS saved"
+  renderCsvHistory().catch(()=>{});
+  // 状态栏
+  const sb = $('statusBar');
+  if(sb) sb.textContent = window._curLang === 'zh-CN' ? '离线数据' : 'Offline Data';
+  // 重建符号选项
+  rebuildSymbolOptions();
+  rebuildSymbolInfo();
+  const savedNick = localStorage.getItem('chan_nickname');
+  const ui = $('userInfo');
+  if(ui && (!savedNick || savedNick === '游客')) ui.textContent = '👤 '+t('guest','游客');
+  // 切语言后，legend / curBarInfo / rankCount 是 innerHTML/拼接的，applyLang 不覆盖
+  // 用 window._renderState 判断是否在模拟/复盘中
+  try{
+    const rs = window._renderState;
+    if(rs){
+      const periodKey = {'30min':'period_30min','day':'period_day','30s':'period_30s','3m':'period_3m','1min':'period_1min','5min':'period_5min','daily':'period_day','30m':'period_30min','unknown':'period_unknown'};
+      const pdName = t(periodKey[curPeriod]||'period_unknown', curPeriod||'30min');
+      const tMode = rs.tplus1 ? t('msg_tplus1','T+1限制') : t('msg_t0','T+0开放');
+      const tradeMsg = rs.tradeable ? t('msg_tradeable','可交易')+' · '+tMode : t('msg_non_tradeable','仅供查看（不可交易）');
+  $('legend').innerHTML =
+        '<span style="background:#4ecdc4;color:#111">'+getSymbolLabel(curCode, curPeriod)+' · '+pdName+'</span>' +
+        '<span style="background:'+(rs.tradeable?'#2ecc71':'#ff6b6b')+';color:#fff">'+tradeMsg+'</span>' +
+        '<span>🟢'+t('chart_bullish_candle','涨K')+'&nbsp;🔴'+t('chart_bearish_candle','跌K')+'</span>' +
+        '<span style="color:#00C853">'+t('chart_up_stroke','向上笔')+'</span>' +
+        '<span style="color:#FF5252">'+t('chart_down_stroke','向下笔')+'</span>' +
+        '<span style="color:#2196F3">'+t('chart_segment','线段')+'</span>' +
+        '<span style="color:#9b59b6">'+t('chart_pivot','中枢')+'</span>' +
+        '<span>'+t('chart_stroke_divergence','笔背驰')+'</span><span>'+t('chart_5stroke_divergence','5笔背驰')+'</span><span>'+t('chart_7stroke_divergence','7笔背驰')+'</span><span>'+t('chart_pivot_divergence','中枢盘整背驰')+'</span><span>'+t('chart_trend_divergence','趋势背驰')+'</span>' +
+        '<span style="color:var(--muted)">📌 TradingView · '+t('chart_area','图表')+'</span>';
+      // vPos 的 '股' 也走翻译
+      $('vPos').textContent = rs.position + ' ' + t('shares','股');
+      // curBarInfo 直接用 cur_bar，避免用全量 window 错行
+      const curBar = rs.cur_bar || (rs.window && rs.window[rs.cur_pos]) || (rs.all_bars && rs.all_bars[rs.cur_pos]) || {datetime:'-',close:0};
+      $('curBarInfo').textContent = curBar.datetime + '  ' + t('close_price','收盘') + ' ' + curBar.close;
+    }
+    // rankCount 同步：优先用窗口上已有值，再回退到 r.total 缓存
+    if(window._rankTotal !== undefined || $('rankCount').textContent){
+      const total = window._rankTotal ?? parseInt($('rankCount').textContent.match(/\d+/)?.[0] || '0', 10);
+      $('rankCount').textContent = t('lb_total','共 {count} 条记录').replace('{count}', total);
+      $('modalRankCount').textContent = t('lb_total','共 {count} 条记录').replace('{count}', total);
+    }
+    // 排行榜 / 用户战绩表格的周期名是渲染时缓存的，切语言后需重建
+    try{
+      // 用户战绩表
+      if(!$('userModal').classList.contains('hidden')){
+        const nick = $('userModalTitle').textContent.replace(/^👤\s*/,'');
+        if(nick) showUser(nick);
+      }
+      // 主屏侧栏排行榜 & modal 排行榜
+      loadBoard();
+      if(!$('boardModal').classList.contains('hidden')){
+        loadBoardModal();
+      }
+    }catch(e){}
+    // result panel 同步（若显示中）
+    if(!$('resultPanel').classList.contains('hidden')){
+      showResult();
+    }
+    // btnAuto 的 textContent 被 toggleAuto/stopAuto 覆盖后会丢失 data-i18n，手动同步
+    const btnAuto = $('btnAuto');
+    if(btnAuto){
+      const isPlaying = /⏸/.test(btnAuto.textContent);
+      btnAuto.innerHTML = '<span>'+(isPlaying?'⏸':'▶')+'</span><span data-i18n="'+(isPlaying?'pause':'auto_play')+'">'+t(isPlaying?'pause':'auto_play', isPlaying?'暂停':'自动播放')+'</span>';
+    }
+    // TradingView chart 的 localization 也要切（切语言时 chart 已创建，需 applyOptions 更新 locale）
+    if(window._lc && window._lc.chart){
+      try{
+        window._lc.chart.applyOptions({localization:{locale: window._chartLocale || 'en-US'}});
+      }catch(e){ console.warn('[switchLang] chart locale skip:', e.message); }
+    }
+  }catch(e){ console.warn('[switchLang] re-render skipped:', e.message); }
+}
+// 加载默认语言（读取 localStorage 持久化，未设过则默认中文）
+(async function initLang(){
+  const savedLang = localStorage.getItem('lang') || 'zh-CN';
+  window._curLang = savedLang;
+  window._chartLocale = savedLang === 'zh-CN' ? 'zh-CN' : 'en-US';
+  await loadLang(savedLang);
+  applyLang();
+  rebuildSymbolOptions();
+  rebuildSymbolInfo();
+  // 更新语言按钮图标
+  const b = $('btnLang');
+  if(b) b.textContent = savedLang === 'zh-CN' ? '🇨🇳' : '🇬🇧';
+  // 更新状态栏
+  const sb = $('statusBar');
+  if(sb) sb.textContent = savedLang === 'zh-CN' ? '离线数据' : 'Offline Data';
+})();
+(function(){ try{const b=$('btnLang');if(b)b.onclick=switchLang}catch(e){}})();
+
+(function(){
+  const btn = $('btnCsvUpload');
+  if(btn) btn.onclick = openCsvModal;
+
+  $('btnCsvCancel').onclick = closeCsvModal;
+
+  $('btnCsvStart').onclick = async ()=>{
+    const ohlFile = $('csvOhl').files[0];
+    const step25File = $('csvStep25').files[0];
+    if(!ohlFile){ toast(t('select_csv','请先选择 K线OHLC CSV 文件')); return; }
+    // 计算行数
+    let rows = '?';
+    try{
+      const txt = await ohlFile.text();
+      rows = txt.trim().split('\n').length - 1;
+    }catch(e){ rows = '?'; }
+    const name = ohlFile.name.replace(/\.csv$/i,'');
+    try{
+      await saveCsvEntryToDb({
+        name: name,
+        period: '30min',
+        bars: rows,
+        uploadedAt: new Date().toISOString(),
+        ohl_raw: ohlFile,
+        step25_raw: step25File || null,
+      });
+      appendCsvHistoryOptions();
+      renderCsvHistory();
+      // 2026-08-30 新增: 保存的同时上传到服务端落盘 data/ (静默执行, 失败不阻塞导入)
+      persistCsvToServer(name, ohlFile, step25File);
+      closeCsvModal();
+      toast(t('csv_saved','CSV {name} 已保存，请到标的列表选择后在初始页配置参数并模拟').replace('{name}', name));
+    }catch(e){ toast('❌ '+e.message); }
+  };
+})();
+
+// 2026-08-30 新增: 导入时同步上传到服务端, 由后端自动落盘 data/
+// 不创建模拟会话, 仅落盘 (沿用 csv-session/start 的解析+推导+落盘逻辑, 会话创建失败也无妨)
+async function persistCsvToServer(name, ohlFile, step25File){
+  try{
+    const fd = new FormData();
+    fd.append('ohl', ohlFile, ohlFile.name);
+    if(step25File) fd.append('step25', step25File, step25File.name);
+    // code 留空 → 后端自动命名 kline_时间戳; 文件名带数字代码前缀时用它命名
+    const m = name.match(/^(\d{5,6})/);
+    if(m) fd.append('code', m[1]);
+    // 从文件名推断周期 (如 xxx_3m.csv / xxx_30min.csv), 推断不出用默认 30min
+    const pm = name.match(/_(3m|5m|15m|30m|30min|1h|day|30s)$/i);
+    fd.append('period', pm ? pm[1] : '30min');
+    fd.append('window_size', '150');
+    const resp = await fetch('/api/csv-session/start', {method:'POST', body:fd});
+    if(resp.ok){
+      console.info('[persist] CSV 已上传落盘:', name);
+    }else{
+      // 数据量不足等业务错误也无需告警用户 (不影响本地保存与后续模拟)
+      console.warn('[persist] 服务端落盘跳过:', await resp.text());
+    }
+  }catch(e){
+    console.warn('[persist] 服务端落盘失败(不影响本地导入):', e.message);
+  }
+}
+
+/* ============ B2: CSV 历史混入 #selSymbol 下拉 ============ */
+let _csvDb = null;
+const CSV_DB_NAME = 'chan_csv_cache';
+const CSV_DB_STORE = 'entries';
+
+function openCsvDb(){
+  return new Promise((resolve, reject) => {
+    if(_csvDb){ resolve(_csvDb); return; }
+    const req = indexedDB.open(CSV_DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(CSV_DB_STORE)){
+        const s = db.createObjectStore(CSV_DB_STORE, {keyPath:'id', autoIncrement:true});
+        s.createIndex('name','name',{unique:false});
+      }
+    };
+    req.onsuccess = e => { _csvDb = e.target.result; resolve(_csvDb); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+function _csvTx(mode, fn){
+  return new Promise((resolve, reject) => {
+    let db = _csvDb;
+    if(!db){ resolve(null); return; }
+    const tx = db.transaction(CSV_DB_STORE, mode);
+    const store = tx.objectStore(CSV_DB_STORE);
+    const out = fn(store);
+    tx.oncomplete = () => resolve(out);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function saveCsvEntryToDb(entry){
+  if(!window.indexedDB){ console.warn('no indexedDB'); return; }
+  await openCsvDb();
+  // 2026-08-29 不再按文件名覆盖: 相同文件名也保留每次导入, 用导入时间区分
+  await _csvTx('readwrite', s => s.add(entry));
+}
+
+async function listCsvEntries(){
+  await openCsvDb();
+  return _csvTx('readonly', s => {
+    return new Promise(res => {
+      const r = s.getAll();
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res([]);
+    });
+  }).catch(() => []);
+}
+
+async function getCsvEntry(id){
+  await openCsvDb();
+  return _csvTx('readonly', s => {
+    return new Promise(res => {
+      const r = s.get(id);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    });
+  }).catch(() => null);
+}
+
+function escHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 展示 CSV 导入时间 (MM/DD HH:MM) — 用于区分同名多次导入
+function fmtCsvDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  const p = n => String(n).padStart(2,'0');
+  return p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+
+// 在 #selSymbol 末尾追加 <optgroup label="CSV 历史">…</optgroup>
+async function appendCsvHistoryOptions(){
+  const sel = $('selSymbol');
+  if(!sel) return;
+  // 移除已有 optgroup
+  const old = sel.querySelector('optgroup[label][data-csv-history]');
+  if(old) old.remove();
+  const items = await listCsvEntries();
+  if(items.length === 0) return;
+  const og = document.createElement('optgroup');
+  og.setAttribute('label', t('csv_history_group','CSV 历史'));
+  og.setAttribute('data-csv-history','1');
+  items.forEach(it => {
+    const o = document.createElement('option');
+    o.value = '__csv__' + it.id;
+    const bars = it.bars ? ('K'+it.bars) : '?';
+    const date = fmtCsvDate(it.uploadedAt);
+    o.textContent = '📂 '+it.name+' · 30min · '+bars+(date ? ' · '+date : '');
+    og.appendChild(o);
+  });
+  sel.appendChild(og);
+}
+
+async function playCsvEntry(id){
+  const entry = await getCsvEntry(id);
+  if(!entry){ toast('❌ CSV 条目不存在'); return; }
+
+  const fd = new FormData();
+  const ohlName = entry.name + '.csv';
+  fd.append('ohl', new Blob([entry.ohl_raw], {type:'text/csv'}), ohlName);
+  if(entry.step25_raw){
+    fd.append('step25', new Blob([entry.step25_raw], {type:'text/csv'}), entry.name + '_step25.csv');
+  }
+  fd.append('init_asset', $('inpAsset').value || '1000000');
+  fd.append('fees_on', 'false');
+  fd.append('window_size', $('selWindow').value || '200');
+  fd.append('period', (entry && entry.period) || '30min');
+  fd.append('tplus1', $('chkTplus1').checked ? 'true' : 'false');
+  // 尝试从文件名推断 code（如 "300502_daily.csv" → "300502"），用于从本地补全线段/中枢
+  const inferredCode = (entry.name.match(/^(\d{5,6})/)) ? RegExp.$1 : '';
+  if (inferredCode) fd.append('code', inferredCode);
+
+  try{
+    destroyChart();
+    sessionId = null;
+    // 2026-08-30 离线分支: 本地引擎解析 CSV 并创建会话
+    if(window._offlineMode){
+      const s = _offlineCsvStart(entry);
+      sessionId = s.session_id;
+      localStorage.setItem('chan_csvSession', sessionId);
+      curCode = 'CSV';
+      curPeriod = (s && s.period) || '30min';
+      symbolData = s._symbolData || s;
+      $('legend').innerHTML =
+        '<span style="background:#4ecdc4;color:#111">CSV · '+t('period_30min','30分钟')+'</span>' +
+        '<span style="background:#ff6b6b;color:#fff">📴 '+t('offline_mode','离线模式')+'</span>' +
+        '<span>🟢'+t('chart_bullish_candle','涨K')+'&nbsp;🔴'+t('chart_bearish_candle','跌K')+'</span>' +
+        '<span style="color:var(--muted)">📌 CSV '+t('panel_csv','导入模拟')+'</span>';
+      $('setupPanel').classList.add('hidden');
+      $('resultPanel').classList.add('hidden');
+      $('playPanel').classList.remove('hidden');
+      toast(t('csv_history_loaded','CSV {name} 已加载').replace('{name}', entry.name));
+      renderState(s);
+      return;
+    }
+    const resp = await fetch('/api/csv-session/start', {method:'POST', body:fd});
+    if(!resp.ok){ const e = await resp.json(); throw new Error(e.detail || '上传失败'); }
+    const s = await resp.json();
+    sessionId = s.session_id;
+    localStorage.setItem('chan_csvSession', sessionId);
+    curCode = 'CSV';
+    curPeriod = (s && s.period) || '30min';
+    symbolData = s._symbolData || s;
+    const s25Flag = s && s._symbolData ? '✅ '+t('csv_with_chan','含缠论绘图') : t('csv_ohlc_only','纯OHLC');
+    $('legend').innerHTML =
+      '<span style="background:#4ecdc4;color:#111">CSV · '+t('period_30min','30分钟')+'</span>' +
+      '<span style="background:#ff6b6b;color:#fff">'+s25Flag+'</span>' +
+      '<span>🟢'+t('chart_bullish_candle','涨K')+'&nbsp;🔴'+t('chart_bearish_candle','跌K')+'</span>' +
+      '<span style="color:var(--muted)">📌 CSV '+t('panel_csv','导入模拟')+'</span>';
+    $('setupPanel').classList.add('hidden');
+    $('resultPanel').classList.add('hidden');
+    $('playPanel').classList.remove('hidden');
+    toast(t('csv_history_loaded','CSV {name} 已加载').replace('{name}', entry.name));
+    renderState(s);
+  }catch(e){ toast('❌ '+e.message); }
+}
+
+// 切语言后重建下拉（含 CSV 历史 optgroup label）
+switchLang = (async function(orig){
+  return async function(){
+    await orig.apply(this, arguments);
+    appendCsvHistoryOptions();
+    renderCsvHistory();
+  };
+})(switchLang);
+
+async function deleteCsvEntry(id){
+  const box = $('csvHistoryBox');
+  if(box){ box.classList.remove('collapsed'); }
+  await _csvTx('readwrite', s => s.delete(id));
+  appendCsvHistoryOptions();
+  renderCsvHistory();
+}
+
+async function renderCsvHistory(){
+  const box = $('csvHistoryBox');
+  const list = $('csvHistoryList');
+  if(!box || !list) return;
+  // 点击 header 折叠/展开
+  const hdr = box.querySelector('.csv-history-header');
+  if(hdr && !hdr._bound){
+    hdr._bound = true;
+    hdr.onclick = () => box.classList.toggle('collapsed');
+  }
+  const items = await listCsvEntries();
+  if(items.length === 0){
+    list.innerHTML = '<div class="csv-history-empty">'+t('csv_history_none','暂无CSV导入记录')+'</div>';
+    return;
+  }
+  let html = '';
+  items.forEach(it => {
+    const meta = 'K'+(it.bars||'?')+' · '+fmtCsvDate(it.uploadedAt);
+    html += '<li class="csv-history-row">'
+      + '<span class="csv-name" title="'+escHtml(it.name)+'">📂 '+escHtml(it.name)+'</span>'
+      + '<span class="csv-meta">'+escHtml(meta)+'</span>'
+      + '<span class="csv-dl" data-csv-del="'+it.id+'" title="'+t('csv_history_del','删除')+'">×</span>'
+      + '</li>';
+  });
+  list.innerHTML = html;
+  // 事件委托：删除
+  list.querySelectorAll('.csv-dl').forEach(el => {
+    el.onclick = () => deleteCsvEntry(parseInt(el.getAttribute('data-csv-del'), 10));
+  });
+}
+
+// 初始化
+appendCsvHistoryOptions().catch(() => {});
+renderCsvHistory().catch(() => {});
+
+init().catch(e=>toast(t('init_failed','初始化失败: {msg}').replace('{msg}',e.message)));
+</script>
+</body>
+</html>

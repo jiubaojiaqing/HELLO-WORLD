@@ -1,0 +1,880 @@
+{
+ "ohl_count": 567,
+ "s25_count": 567,
+ "bars_count": 567,
+ "segments": [
+  {
+   "from_idx": 15,
+   "from_price": 51.71,
+   "to_idx": 32,
+   "to_price": 48.1,
+   "label": "G@k15->XXD (黄色虚线，向下线段)"
+  },
+  {
+   "from_idx": 32,
+   "from_price": 48.1,
+   "to_idx": 139,
+   "to_price": 72.6,
+   "label": "XXD->XSG (蓝色实线，向上线段)"
+  },
+  {
+   "from_idx": 139,
+   "from_price": 72.6,
+   "to_idx": 161,
+   "to_price": 66.29,
+   "label": "XSG->XXD (蓝色实线，向下线段)"
+  },
+  {
+   "from_idx": 161,
+   "from_price": 66.29,
+   "to_idx": 185,
+   "to_price": 80.25,
+   "label": "XXD->XSG (蓝色实线，向上线段)"
+  },
+  {
+   "from_idx": 185,
+   "from_price": 80.25,
+   "to_idx": 301,
+   "to_price": 63.22,
+   "label": "XSG->XXD (蓝色实线，向下线段)"
+  },
+  {
+   "from_idx": 301,
+   "from_price": 63.22,
+   "to_idx": 342,
+   "to_price": 76.3,
+   "label": "XXD->XSG (蓝色实线，向上线段)"
+  },
+  {
+   "from_idx": 342,
+   "from_price": 76.3,
+   "to_idx": 420,
+   "to_price": 57.41,
+   "label": "XSG->XXD (蓝色实线，向下线段)"
+  },
+  {
+   "from_idx": 420,
+   "from_price": 57.41,
+   "to_idx": 431,
+   "to_price": 64.22,
+   "label": "XXD->XSG (蓝色实线，向上线段)"
+  },
+  {
+   "from_idx": 431,
+   "from_price": 64.22,
+   "to_idx": 450,
+   "to_price": 55.03,
+   "label": "XSG->XXD (蓝色实线，向下线段)"
+  },
+  {
+   "from_idx": 450,
+   "from_price": 55.03,
+   "to_idx": 479,
+   "to_price": 62.9,
+   "label": "XXD->XSG (蓝色实线，向上线段)"
+  },
+  {
+   "from_idx": 479,
+   "from_price": 62.9,
+   "to_idx": 515,
+   "to_price": 52.94,
+   "label": "XSG->XXD (蓝色实线，向下线段)"
+  },
+  {
+   "from_idx": 515,
+   "from_price": 52.94,
+   "to_idx": 554,
+   "to_price": 58.75,
+   "label": "XXD->G@k554 (黄色实线，向上线段)"
+  }
+ ],
+ "zhongshu": [
+  {
+   "zs_id": 1,
+   "seg_type": "up",
+   "x_left": 41,
+   "x_right": 62,
+   "y_bottom": 48.63999938964844,
+   "y_top": 49.95000076293945
+  },
+  {
+   "zs_id": 2,
+   "seg_type": "up",
+   "x_left": 93,
+   "x_right": 104,
+   "y_bottom": 59.25,
+   "y_top": 60.880001068115234
+  },
+  {
+   "zs_id": 3,
+   "seg_type": "up",
+   "x_left": 110,
+   "x_right": 133,
+   "y_bottom": 64.37000274658203,
+   "y_top": 65.7300033569336
+  },
+  {
+   "zs_id": 4,
+   "seg_type": "down",
+   "x_left": 147,
+   "x_right": 157,
+   "y_bottom": 66.80000305175781,
+   "y_top": 69.4800033569336
+  },
+  {
+   "zs_id": 5,
+   "seg_type": "down",
+   "x_left": 205,
+   "x_right": 220,
+   "y_bottom": 69.30000305175781,
+   "y_top": 72.98999786376953
+  },
+  {
+   "zs_id": 6,
+   "seg_type": "down",
+   "x_left": 223,
+   "x_right": 242,
+   "y_bottom": 72.38999938964844,
+   "y_top": 74.8499984741211
+  },
+  {
+   "zs_id": 7,
+   "seg_type": "down",
+   "x_left": 248,
+   "x_right": 262,
+   "y_bottom": 71.4000015258789,
+   "y_top": 73.75
+  },
+  {
+   "zs_id": 8,
+   "seg_type": "up",
+   "x_left": 315,
+   "x_right": 331,
+   "y_bottom": 66.37999725341797,
+   "y_top": 68.69999694824219
+  },
+  {
+   "zs_id": 9,
+   "seg_type": "down",
+   "x_left": 355,
+   "x_right": 381,
+   "y_bottom": 62.47999954223633,
+   "y_top": 65.97000122070312
+  },
+  {
+   "zs_id": 10,
+   "seg_type": "down",
+   "x_left": 397,
+   "x_right": 407,
+   "y_bottom": 60.59999847412109,
+   "y_top": 64.27999877929688
+  },
+  {
+   "zs_id": 11,
+   "seg_type": "up",
+   "x_left": 458,
+   "x_right": 473,
+   "y_bottom": 60.34999847412109,
+   "y_top": 61.68000030517578
+  },
+  {
+   "zs_id": 12,
+   "seg_type": "down",
+   "x_left": 488,
+   "x_right": 499,
+   "y_bottom": 59.20000076293945,
+   "y_top": 60.83000183105469
+  },
+  {
+   "zs_id": 13,
+   "seg_type": "up",
+   "x_left": 522,
+   "x_right": 542,
+   "y_bottom": 55.22999954223633,
+   "y_top": 57.95000076293945
+  }
+ ],
+ "pens": [
+  {
+   "start_idx": 7,
+   "end_idx": 15,
+   "start_price": 44.57,
+   "end_price": 51.71,
+   "direction": "up"
+  },
+  {
+   "start_idx": 15,
+   "end_idx": 22,
+   "start_price": 51.71,
+   "end_price": 48.18,
+   "direction": "down"
+  },
+  {
+   "start_idx": 22,
+   "end_idx": 26,
+   "start_price": 48.18,
+   "end_price": 51.29,
+   "direction": "up"
+  },
+  {
+   "start_idx": 26,
+   "end_idx": 32,
+   "start_price": 51.29,
+   "end_price": 48.1,
+   "direction": "down"
+  },
+  {
+   "start_idx": 32,
+   "end_idx": 41,
+   "start_price": 48.1,
+   "end_price": 51.11,
+   "direction": "up"
+  },
+  {
+   "start_idx": 41,
+   "end_idx": 54,
+   "start_price": 51.11,
+   "end_price": 48.64,
+   "direction": "down"
+  },
+  {
+   "start_idx": 54,
+   "end_idx": 58,
+   "start_price": 48.64,
+   "end_price": 49.95,
+   "direction": "up"
+  },
+  {
+   "start_idx": 58,
+   "end_idx": 62,
+   "start_price": 49.95,
+   "end_price": 48.11,
+   "direction": "down"
+  },
+  {
+   "start_idx": 62,
+   "end_idx": 93,
+   "start_price": 48.11,
+   "end_price": 60.98,
+   "direction": "up"
+  },
+  {
+   "start_idx": 93,
+   "end_idx": 97,
+   "start_price": 60.98,
+   "end_price": 58.0,
+   "direction": "down"
+  },
+  {
+   "start_idx": 97,
+   "end_idx": 101,
+   "start_price": 58.0,
+   "end_price": 60.88,
+   "direction": "up"
+  },
+  {
+   "start_idx": 101,
+   "end_idx": 104,
+   "start_price": 60.88,
+   "end_price": 59.25,
+   "direction": "down"
+  },
+  {
+   "start_idx": 104,
+   "end_idx": 110,
+   "start_price": 59.25,
+   "end_price": 65.73,
+   "direction": "up"
+  },
+  {
+   "start_idx": 110,
+   "end_idx": 114,
+   "start_price": 65.73,
+   "end_price": 62.9,
+   "direction": "down"
+  },
+  {
+   "start_idx": 114,
+   "end_idx": 126,
+   "start_price": 62.9,
+   "end_price": 70.68,
+   "direction": "up"
+  },
+  {
+   "start_idx": 126,
+   "end_idx": 133,
+   "start_price": 70.68,
+   "end_price": 64.37,
+   "direction": "down"
+  },
+  {
+   "start_idx": 133,
+   "end_idx": 139,
+   "start_price": 64.37,
+   "end_price": 72.6,
+   "direction": "up"
+  },
+  {
+   "start_idx": 139,
+   "end_idx": 147,
+   "start_price": 72.6,
+   "end_price": 66.5,
+   "direction": "down"
+  },
+  {
+   "start_idx": 147,
+   "end_idx": 151,
+   "start_price": 66.5,
+   "end_price": 69.48,
+   "direction": "up"
+  },
+  {
+   "start_idx": 151,
+   "end_idx": 154,
+   "start_price": 69.48,
+   "end_price": 66.8,
+   "direction": "down"
+  },
+  {
+   "start_idx": 154,
+   "end_idx": 157,
+   "start_price": 66.8,
+   "end_price": 71.0,
+   "direction": "up"
+  },
+  {
+   "start_idx": 157,
+   "end_idx": 161,
+   "start_price": 71.0,
+   "end_price": 66.29,
+   "direction": "down"
+  },
+  {
+   "start_idx": 161,
+   "end_idx": 176,
+   "start_price": 66.29,
+   "end_price": 78.78,
+   "direction": "up"
+  },
+  {
+   "start_idx": 176,
+   "end_idx": 180,
+   "start_price": 78.78,
+   "end_price": 75.11,
+   "direction": "down"
+  },
+  {
+   "start_idx": 180,
+   "end_idx": 185,
+   "start_price": 75.11,
+   "end_price": 80.25,
+   "direction": "up"
+  },
+  {
+   "start_idx": 185,
+   "end_idx": 205,
+   "start_price": 80.25,
+   "end_price": 69.3,
+   "direction": "down"
+  },
+  {
+   "start_idx": 205,
+   "end_idx": 209,
+   "start_price": 69.3,
+   "end_price": 72.99,
+   "direction": "up"
+  },
+  {
+   "start_idx": 209,
+   "end_idx": 215,
+   "start_price": 72.99,
+   "end_price": 67.57,
+   "direction": "down"
+  },
+  {
+   "start_idx": 215,
+   "end_idx": 220,
+   "start_price": 67.57,
+   "end_price": 74.93,
+   "direction": "up"
+  },
+  {
+   "start_idx": 220,
+   "end_idx": 223,
+   "start_price": 74.93,
+   "end_price": 72.39,
+   "direction": "down"
+  },
+  {
+   "start_idx": 223,
+   "end_idx": 226,
+   "start_price": 72.39,
+   "end_price": 74.85,
+   "direction": "up"
+  },
+  {
+   "start_idx": 226,
+   "end_idx": 238,
+   "start_price": 74.85,
+   "end_price": 69.32,
+   "direction": "down"
+  },
+  {
+   "start_idx": 238,
+   "end_idx": 242,
+   "start_price": 69.32,
+   "end_price": 77.8,
+   "direction": "up"
+  },
+  {
+   "start_idx": 242,
+   "end_idx": 248,
+   "start_price": 77.8,
+   "end_price": 71.4,
+   "direction": "down"
+  },
+  {
+   "start_idx": 248,
+   "end_idx": 252,
+   "start_price": 71.4,
+   "end_price": 73.75,
+   "direction": "up"
+  },
+  {
+   "start_idx": 252,
+   "end_idx": 255,
+   "start_price": 73.75,
+   "end_price": 68.15,
+   "direction": "down"
+  },
+  {
+   "start_idx": 255,
+   "end_idx": 262,
+   "start_price": 68.15,
+   "end_price": 78.0,
+   "direction": "up"
+  },
+  {
+   "start_idx": 262,
+   "end_idx": 266,
+   "start_price": 78.0,
+   "end_price": 72.5,
+   "direction": "down"
+  },
+  {
+   "start_idx": 266,
+   "end_idx": 271,
+   "start_price": 72.5,
+   "end_price": 75.6,
+   "direction": "up"
+  },
+  {
+   "start_idx": 271,
+   "end_idx": 284,
+   "start_price": 75.6,
+   "end_price": 64.6,
+   "direction": "down"
+  },
+  {
+   "start_idx": 284,
+   "end_idx": 290,
+   "start_price": 64.6,
+   "end_price": 69.88,
+   "direction": "up"
+  },
+  {
+   "start_idx": 290,
+   "end_idx": 301,
+   "start_price": 69.88,
+   "end_price": 63.22,
+   "direction": "down"
+  },
+  {
+   "start_idx": 301,
+   "end_idx": 315,
+   "start_price": 63.22,
+   "end_price": 68.7,
+   "direction": "up"
+  },
+  {
+   "start_idx": 315,
+   "end_idx": 321,
+   "start_price": 68.7,
+   "end_price": 65.6,
+   "direction": "down"
+  },
+  {
+   "start_idx": 321,
+   "end_idx": 328,
+   "start_price": 65.6,
+   "end_price": 71.01,
+   "direction": "up"
+  },
+  {
+   "start_idx": 328,
+   "end_idx": 331,
+   "start_price": 71.01,
+   "end_price": 66.38,
+   "direction": "down"
+  },
+  {
+   "start_idx": 331,
+   "end_idx": 335,
+   "start_price": 66.38,
+   "end_price": 71.99,
+   "direction": "up"
+  },
+  {
+   "start_idx": 335,
+   "end_idx": 339,
+   "start_price": 71.99,
+   "end_price": 66.46,
+   "direction": "down"
+  },
+  {
+   "start_idx": 339,
+   "end_idx": 342,
+   "start_price": 66.46,
+   "end_price": 76.3,
+   "direction": "up"
+  },
+  {
+   "start_idx": 342,
+   "end_idx": 345,
+   "start_price": 76.3,
+   "end_price": 73.18,
+   "direction": "down"
+  },
+  {
+   "start_idx": 345,
+   "end_idx": 348,
+   "start_price": 73.18,
+   "end_price": 74.56,
+   "direction": "up"
+  },
+  {
+   "start_idx": 348,
+   "end_idx": 355,
+   "start_price": 74.56,
+   "end_price": 62.48,
+   "direction": "down"
+  },
+  {
+   "start_idx": 355,
+   "end_idx": 362,
+   "start_price": 62.48,
+   "end_price": 70.88,
+   "direction": "up"
+  },
+  {
+   "start_idx": 362,
+   "end_idx": 376,
+   "start_price": 70.88,
+   "end_price": 60.66,
+   "direction": "down"
+  },
+  {
+   "start_idx": 376,
+   "end_idx": 381,
+   "start_price": 60.66,
+   "end_price": 65.97,
+   "direction": "up"
+  },
+  {
+   "start_idx": 381,
+   "end_idx": 397,
+   "start_price": 65.97,
+   "end_price": 60.6,
+   "direction": "down"
+  },
+  {
+   "start_idx": 397,
+   "end_idx": 400,
+   "start_price": 60.6,
+   "end_price": 64.28,
+   "direction": "up"
+  },
+  {
+   "start_idx": 400,
+   "end_idx": 403,
+   "start_price": 64.28,
+   "end_price": 59.7,
+   "direction": "down"
+  },
+  {
+   "start_idx": 403,
+   "end_idx": 407,
+   "start_price": 59.7,
+   "end_price": 65.66,
+   "direction": "up"
+  },
+  {
+   "start_idx": 407,
+   "end_idx": 420,
+   "start_price": 65.66,
+   "end_price": 57.41,
+   "direction": "down"
+  },
+  {
+   "start_idx": 420,
+   "end_idx": 424,
+   "start_price": 57.41,
+   "end_price": 62.25,
+   "direction": "up"
+  },
+  {
+   "start_idx": 424,
+   "end_idx": 427,
+   "start_price": 62.25,
+   "end_price": 59.85,
+   "direction": "down"
+  },
+  {
+   "start_idx": 427,
+   "end_idx": 431,
+   "start_price": 59.85,
+   "end_price": 64.22,
+   "direction": "up"
+  },
+  {
+   "start_idx": 431,
+   "end_idx": 440,
+   "start_price": 64.22,
+   "end_price": 57.09,
+   "direction": "down"
+  },
+  {
+   "start_idx": 440,
+   "end_idx": 443,
+   "start_price": 57.09,
+   "end_price": 59.88,
+   "direction": "up"
+  },
+  {
+   "start_idx": 443,
+   "end_idx": 450,
+   "start_price": 59.88,
+   "end_price": 55.03,
+   "direction": "down"
+  },
+  {
+   "start_idx": 450,
+   "end_idx": 458,
+   "start_price": 55.03,
+   "end_price": 61.68,
+   "direction": "up"
+  },
+  {
+   "start_idx": 458,
+   "end_idx": 463,
+   "start_price": 61.68,
+   "end_price": 58.65,
+   "direction": "down"
+  },
+  {
+   "start_idx": 463,
+   "end_idx": 468,
+   "start_price": 58.65,
+   "end_price": 61.98,
+   "direction": "up"
+  },
+  {
+   "start_idx": 468,
+   "end_idx": 473,
+   "start_price": 61.98,
+   "end_price": 60.35,
+   "direction": "down"
+  },
+  {
+   "start_idx": 473,
+   "end_idx": 479,
+   "start_price": 60.35,
+   "end_price": 62.9,
+   "direction": "up"
+  },
+  {
+   "start_idx": 479,
+   "end_idx": 488,
+   "start_price": 62.9,
+   "end_price": 59.2,
+   "direction": "down"
+  },
+  {
+   "start_idx": 488,
+   "end_idx": 492,
+   "start_price": 59.2,
+   "end_price": 62.36,
+   "direction": "up"
+  },
+  {
+   "start_idx": 492,
+   "end_idx": 495,
+   "start_price": 62.36,
+   "end_price": 57.02,
+   "direction": "down"
+  },
+  {
+   "start_idx": 495,
+   "end_idx": 499,
+   "start_price": 57.02,
+   "end_price": 60.83,
+   "direction": "up"
+  },
+  {
+   "start_idx": 499,
+   "end_idx": 505,
+   "start_price": 60.83,
+   "end_price": 53.12,
+   "direction": "down"
+  },
+  {
+   "start_idx": 505,
+   "end_idx": 511,
+   "start_price": 53.12,
+   "end_price": 56.0,
+   "direction": "up"
+  },
+  {
+   "start_idx": 511,
+   "end_idx": 515,
+   "start_price": 56.0,
+   "end_price": 52.94,
+   "direction": "down"
+  },
+  {
+   "start_idx": 515,
+   "end_idx": 522,
+   "start_price": 52.94,
+   "end_price": 57.95,
+   "direction": "up"
+  },
+  {
+   "start_idx": 522,
+   "end_idx": 525,
+   "start_price": 57.95,
+   "end_price": 55.23,
+   "direction": "down"
+  },
+  {
+   "start_idx": 525,
+   "end_idx": 529,
+   "start_price": 55.23,
+   "end_price": 58.0,
+   "direction": "up"
+  },
+  {
+   "start_idx": 529,
+   "end_idx": 542,
+   "start_price": 58.0,
+   "end_price": 54.52,
+   "direction": "down"
+  },
+  {
+   "start_idx": 542,
+   "end_idx": 554,
+   "start_price": 54.52,
+   "end_price": 58.75,
+   "direction": "up"
+  },
+  {
+   "start_idx": 554,
+   "end_idx": 561,
+   "start_price": 58.75,
+   "end_price": 55.8,
+   "direction": "down"
+  }
+ ],
+ "buy1": {
+  "ok": true,
+  "msg": "Bought 8200 shares @ 72.45",
+  "qty": 8200,
+  "price": 72.45,
+  "fee": 160.4,
+  "position": 8200,
+  "cash": 405749.6,
+  "avg_cost": 72.47,
+  "float_profit": -160.4,
+  "total_asset": 999839.6
+ },
+ "sell1": {
+  "ok": false,
+  "msg": "Cannot trade in current state"
+ },
+ "buy2": {
+  "ok": false,
+  "msg": "Cannot trade in current state"
+ },
+ "result": {
+  "session_id": "X",
+  "status": "FINISHED",
+  "init_asset": 1000000.0,
+  "final_asset": 1013826.36,
+  "total_profit": 13826.36,
+  "profit_rate": 1.38,
+  "trade_count": 1,
+  "sell_count": 1,
+  "win_count": 1,
+  "loss_count": 0,
+  "max_win": 13826.36,
+  "max_loss": 0,
+  "remain_position": 0,
+  "end_date": "2026-06-01 10:30"
+ },
+ "final_status": "FINISHED",
+ "final_position": 0,
+ "final_cash": 1013826.36,
+ "final_trades_n": 2,
+ "final_trades": [
+  {
+   "id": "X",
+   "type": "buy",
+   "idx": 209,
+   "datetime": "2026-05-21 10:30",
+   "price": 72.45,
+   "qty": 8200,
+   "amount": 594090.0,
+   "fee": 160.4,
+   "status": "holding"
+  },
+  {
+   "id": "X",
+   "type": "sell",
+   "idx": 249,
+   "datetime": "2026-06-01 10:30",
+   "price": 74.25,
+   "qty": 8200,
+   "amount": 608850.0,
+   "fee": 773.24,
+   "profit": 13826.36,
+   "status": "closed",
+   "note": "Auto-closed"
+  }
+ ],
+ "first_bar": {
+  "idx": 100,
+  "datetime": "2026-04-16 14:00",
+  "time": 1776319200,
+  "open": 59.96,
+  "high": 60.23,
+  "low": 59.94,
+  "close": 60.1,
+  "signals": [],
+  "in_zhongshu": true,
+  "summacd": 0.0
+ },
+ "last_bar": {
+  "idx": 249,
+  "datetime": "2026-06-01 10:30",
+  "time": 1780281000,
+  "open": 73.93,
+  "high": 75.93,
+  "low": 73.83,
+  "close": 74.25,
+  "signals": [],
+  "in_zhongshu": true,
+  "summacd": 0.0
+ },
+ "window_len": 150,
+ "all_bars_len": 150,
+ "start_idx": 100
+}
