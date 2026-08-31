@@ -17,16 +17,19 @@ jobs:
             -target ChanTrading \
             -configuration Release \
             -sdk iphoneos \
+            -derivedDataPath build \
             build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
-            ARCHS=arm64 \
-            CONFIGURATION_BUILD_DIR=build
+            ARCHS=arm64
 
       - name: Package unsigned IPA
         run: |
+          APP=$(find build -type d -name "ChanTrading.app" | head -1)
+          echo "APP path: $APP"
+          test -n "$APP"
           mkdir Payload
-          cp -r build/ChanTrading.app Payload/
+          cp -R "$APP" Payload/
           zip -qry ChanTrading.ipa Payload
           ls -la ChanTrading.ipa
 

@@ -3,4 +3,4 @@ __pycache__/
 .trae/
 *.log
 test_report.json
-ios/build/
+build/
